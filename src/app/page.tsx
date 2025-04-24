@@ -4,6 +4,7 @@ import Hero from "@/components/landingPage/Hero";
 import Funding from "@/components/landingPage/Funding";
 import Footer from "@/components/landingPage/Footer"
 import Features from "@/components/landingPage/Features";
+import Best from "@/components/landingPage/Best";
 
 
 export default function Home() {
@@ -13,6 +14,8 @@ export default function Home() {
     <Hero />
     <Funding />
     <Features />
+    <Best />
+
 
 
     

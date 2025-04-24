@@ -74,7 +74,7 @@ const Hero = () => {
         
         {/* Subtext */}
         <motion.p 
-          className="mt-4 text-gray-300 max-w-xl text-base"
+          className="mt-4 text-gray-300 max-w-xl text-base font-krona"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: isVisible ? 1 : 0, y: isVisible ? 0 : 20 }}
           transition={{ duration: 0.5, delay: 0.6 }}
@@ -104,7 +104,7 @@ const Hero = () => {
           </motion.button>
           
           <motion.button 
-            className="border border-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-black transition-colors duration-300"
+            className="border border-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-black transition-colors duration-300 font-krona"
             whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 1)", color: "#000" }}
             whileTap={{ scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 10 }}

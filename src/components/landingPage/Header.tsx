@@ -33,7 +33,7 @@ const Header = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="hidden md:flex items-center gap-6 text-sm text-white relative">
+      <nav className="hidden md:flex items-center gap-6 text-sm text-white relative font-krona">
         <div className={`${navLinkClass} after:block after:h-[2px] after:bg-[#FF7171] after:absolute after:-bottom-1 after:left-0 after:w-full`}>
           Home
         </div>

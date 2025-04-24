@@ -7,15 +7,15 @@ const Funding: React.FC = () => {
     < div className="mx-auto  bg-black text-white py-10 ">
       <div className='w-[50%] mx-auto '>
 
-        <p className="text-sm text-[#FFFFFF] w-30 bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] px-1 py-2 mb-6 rounded-full">Why We Exist?</p>
+        <p className="text-xs text-[#FFFFFF] w-35 bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] px-3 py-1 mb-6 rounded-full font-krona">Why We Exist?</p>
         <h1 className="text-3xl md:text-5xl my-4  font-krona mt-3 leading-18">
-          Funding a <span className="text-gradient bg-gradient-to-r from-[#FF7171] to-[#2F50FF] bg-clip-text text-transparent pb-1.5s">Web3</span> project is hard.
+          Funding a <span className="text-gradient bg-gradient-to-r from-[#FF7171] to-[#2F50FF] bg-clip-text text-transparent pb-1.5s font-krona">Web3</span> project is hard.
         </h1>
         </div>
-        <p className="text-lg text-gray-300 text-center mr-[26rem]">Raising your first check shouldn’t be.</p>
+        <p className="text-lg text-gray-300 text-center mr-[17rem] font-krona">Raising your first check shouldn’t be.</p>
         <div className="mt-6 flex justify-center gap-4">
-          <button className="px-10 py-2 rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 text-white font-semibold cursor-pointer">Get Started</button>
-          <button className="px-6 py-3 rounded-full border border-white text-white font-semibold cursor-pointer">Explore Projects</button>
+          <button className="px-10 py-2 rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 text-white font-semibold cursor-pointer font-krona">Get Started</button>
+          <button className="px-6 py-3 rounded-full border border-white text-white font-semibold cursor-pointer font-krona">Explore Projects</button>
         </div>
       
 
@@ -37,8 +37,8 @@ const Funding: React.FC = () => {
               width={200}
               height={200}
             />
-            <h3 className="text-xl font-bold mb-2">Founders</h3>
-            <p className="text-sm text-gray-300">
+            <h3 className="text-xl font-bold mb-2 font-krona">Founders</h3>
+            <p className="text-sm text-gray-300 font-krona">
               Founders who want to focus on building, not chasing investor intros
             </p>
           </div>
@@ -61,8 +61,8 @@ const Funding: React.FC = () => {
               width={200}
               height={200}
             />
-            <h3 className="text-xl font-bold mb-2">Investors</h3>
-            <p className="text-sm text-gray-300">
+            <h3 className="text-xl font-bold mb-2 font-krona">Investors</h3>
+            <p className="text-sm text-gray-300 font-krona">
               Investors who want early access to real projects with real terms
             </p>
           </div>
@@ -79,14 +79,14 @@ const Funding: React.FC = () => {
           />
           <div className="relative flex flex-col items-center text-center z-10">
           <Image
-              src="https://res.cloudinary.com/detc4yjdi/image/upload/v1745454248/income_growth_vkgye6.png"
+              src="https://res.cloudinary.com/detc4yjdi/image/upload/v1745509135/team_sign_on_puzzle_vui7b5.png"
               alt="Income"
               className="mb-4"
               width={200}
               height={200}
             />
-            <h3 className="text-xl font-bold mb-2">Teams</h3>
-            <p className="text-sm text-gray-300">
+            <h3 className="text-xl font-bold mb-2 font-krona">Teams</h3>
+            <p className="text-sm text-gray-300 font-krona">
               Teams who care about transparency, speed, and doing things on-chain
             </p>
           </div>
