@@ -26,7 +26,7 @@ const Waitlist = (props: { close: MouseEventHandler<SVGSVGElement> | undefined; 
         <>
         
         <div className='flex items-center flex-col fixed z-1000  justify-center w-screen h-screen'>
-            <div className="flex gap-3 rounded-lg shadow-2xl bg-[#05091B] w-6/12 px-6 py-6 flex-col">
+            <div className="flex -mt-10 gap-3 rounded-lg shadow-2xl bg-[#05091B] sm:w-6/12  w- 9/12 px-6 py-6 flex-col">
                 <div className="flex w-full justify-between items-center">
                     <h1 className="capitalize sm:text-3xl text-2xl font-bold font-krona">join our <span>waitlist </span></h1>
                     <span><X onClick={props.close}/></span>
