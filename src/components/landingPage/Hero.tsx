@@ -110,7 +110,7 @@ const Hero = () => {
             className="bg-white text-black px-6 py-3 rounded-full font-semibold flex items-center gap-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}ope
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}
             onClick={openmodal}
           >
             <img
