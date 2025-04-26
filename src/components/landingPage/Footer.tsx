@@ -31,7 +31,7 @@ export default function Footer(){
                 </div>
                 <div className="relative overflow-y-hidden w-full items-center self-center justify-center flex">
                     {/* <Image src='/Frame 27 (3).png' alt="Raise3 Logo" width={800} height={800} layout="" /> */}
-                    <h1 className="text-9xl  p-10 font-bold font-krona text-white">Raise<sup>3</sup> </h1>
+                    <h1 className="sm:text-9xl text-4xl  p-10 font-bold font-krona text-white">Raise<sup>3</sup> </h1>
                     <div className="absolute sm:-bottom-12 -bottom-8  flex w-full items-center justify-center">
                     <div 
                         className="  sm:px-40 px-20  self-center items-center justify-center flex rounded-4xl h-1/3 pointer-events-none" 

@@ -2,16 +2,33 @@
 
 import { motion } from "framer-motion"
 import { useState, useEffect } from "react"
+import Waitlist from "../ui/waitlist-modal"
 
 const Hero = () => {
   const [isVisible, setIsVisible] = useState(false)
+
 
   useEffect(() => {
     // Set visibility after component mounts for animations
     setIsVisible(true)
   }, [])
+  const [open,  setOpen] =  useState(false);
+
+  const closemodal = () =>{
+      console.log('clicked')
+      setOpen(false);
+  }
+  const openmodal = () =>{
+    setOpen(true)
+  }
+
+ 
+
 
   return (
+    <>
+    {open ? <Waitlist close = {closemodal}/> : null }
+    
     <section
       className="relative w-full h-[90vh] flex flex-col items-center justify-center text-center px-4 text-white bg-cover bg-center overflow-hidden"
       style={{
@@ -93,7 +110,8 @@ const Hero = () => {
             className="bg-white text-black px-6 py-3 rounded-full font-semibold flex items-center gap-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
+            transition={{ type: "spring", stiffness: 400, damping: 10 }}ope
+            onClick={openmodal}
           >
             <img
               src="https://res.cloudinary.com/detc4yjdi/image/upload/v1745446860/Frame_1_qkcrgd.png"
@@ -136,7 +154,10 @@ const Hero = () => {
         />
       ))}
     </section>
+    </>
   )
 }
 
 export default Hero
+
+
