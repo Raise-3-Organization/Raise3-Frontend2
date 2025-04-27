@@ -5,7 +5,7 @@ import Funding from "@/components/landingPage/Funding";
 import Footer from "@/components/landingPage/Footer"
 import Features from "@/components/landingPage/Features";
 import Best from "@/components/landingPage/Best";
-
+import Faq from "@/components/landingPage/Faq";
 
 export default function Home() {
   return (
@@ -15,6 +15,7 @@ export default function Home() {
     <Funding />
     <Features />
     <Best />
+    <Faq />
 
 
 

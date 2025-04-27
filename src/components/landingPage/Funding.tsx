@@ -4,7 +4,7 @@ import Image from 'next/image';
 const Funding: React.FC = () => {
   return (
     <>
-    < div className="mx-auto  bg-black text-white py-10 ">
+    < div className="mx-auto  bg-black text-white py-10 dark-bg-white">
       <div className='w-[50%] mx-auto '>
 
         <p className="text-xs text-[#FFFFFF] w-35 bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] px-3 py-1 mb-6 rounded-full font-krona">Why We Exist?</p>
