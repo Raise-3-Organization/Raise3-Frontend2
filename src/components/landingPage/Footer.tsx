@@ -8,27 +8,6 @@ export default function Footer(){
                 <div className="sm:w-10/12 w-full flex sm:flex-row flex-col  sm:items-center justify-evenly">
                     <Image src="/image.png" alt="Raise3 Logo" width={80} height={80} />
                  <ul>
-<<<<<<< HEAD
-                    <h3 className="text-white font-bold text-lg font-krona">Platform</h3>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>Security</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>Features</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>Pricing</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>FAQ's</Link></li>
-                 </ul>
-                 <ul>
-                    <h3 className="text-white font-bold text-lg font-krona">Resources</h3>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>For Founders</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>For Developers</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>Blog</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>Documentation</Link></li>
-                 </ul>
-                 <ul>
-                    <h3 className="text-white font-bold text-lg font-krona">Company</h3>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>About Us</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>Careers</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>Contact</Link></li>
-                    <li className="text-sm font-light font-krona"> <Link href='/fetaures'>Privacy Policy</Link></li>
-=======
                     <h3 className="text-white font-bold text-lg">Platform</h3>
                     <li className="text-sm font-normal text-white"> <Link href='/fetaures'>Security</Link></li>
                     <li className="text-sm font-normal text-white"> <Link href='/fetaures'>Features</Link></li>
@@ -48,7 +27,6 @@ export default function Footer(){
                     <li className="text-sm font-normal text-white"> <Link href='/fetaures'>Careers</Link></li>
                     <li className="text-sm font-normal text-white"> <Link href='/fetaures'>Contact</Link></li>
                     <li className="text-sm font-normal text-white"> <Link href='/fetaures'>Privacy Policy</Link></li>
->>>>>>> 3a2bd4145cff2bcbc86257734f473b1442c0010a
                  </ul>
                 </div>
                 <div className="relative overflow-y-hidden w-full items-center self-center justify-center flex">

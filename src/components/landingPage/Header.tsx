@@ -62,7 +62,7 @@ const Header = () => {
   }, [walletButtonRef]);
 
   const toggleTheme = () => {
-    setTheme(currentTheme === "dark" ? "light" : "dark")
+    setTheme(theme === "dark" ? "light" : "dark")
   }
 
   const handleDropdown = (menu: string) => {
@@ -184,7 +184,7 @@ const Header = () => {
             className="p-2 rounded-full text-black dark:text-white bg-gray-200 dark:bg-black/30 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors"
             aria-label="Toggle Theme"
           >
-            {currentTheme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
         )}
 
