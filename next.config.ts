@@ -14,17 +14,17 @@ const nextConfig: NextConfig = {
     
     // Ensure the CSS loader is properly configured
     const oneOfRule = config.module.rules.find(
-      (rule) => typeof rule.oneOf === "object"
+      (rule: any) => typeof rule.oneOf === "object"
     );
     
     if (oneOfRule) {
       const cssRule = oneOfRule.oneOf.find(
-        (rule) => rule.test && rule.test.toString().includes("css")
+        (rule: any) => rule.test && rule.test.toString().includes("css")
       );
       
       if (cssRule) {
         cssRule.use = cssRule.use.filter(
-          (rule) => !rule.loader || !rule.loader.includes("postcss-loader")
+          (rule: { loader?: string }) => !rule.loader || !rule.loader.includes("postcss-loader")
         );
       }
     }
