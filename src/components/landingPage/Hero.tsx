@@ -118,7 +118,7 @@ const Hero = () => {
             transition={{ duration: 0.5, delay: 0.8 }}
           >
             <motion.button
-              className="bg-white text-black px-6 py-3 rounded-full font-semibold flex items-center gap-2"
+              className="bg-white text-black px-6 py-3 rounded-full font-semibold flex items-center gap-2 font-krona cursor-pointer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -133,7 +133,7 @@ const Hero = () => {
             </motion.button>
 
             <motion.button
-              className="border border-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-black transition-colors duration-300 font-krona"
+              className="border border-white px-6 py-3 rounded-full font-semibold hover:bg-white hover:text-black transition-colors duration-300 font-krona cursor-pointer"
               whileHover={{
                 scale: 1.05,
                 backgroundColor: "rgba(255, 255, 255, 1)",
@@ -150,7 +150,8 @@ const Hero = () => {
         {/* ✅ Floating Particles FIXED */}
         {particles.map((particle, i) => (
           <motion.div
-            key={i}
+            suppressHydrationWarning
+            key={i + 1}
             className="absolute w-2 h-2 bg-white rounded-full opacity-50 z-10"
             style={{ top: particle.top, left: particle.left }}
             initial={{

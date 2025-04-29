@@ -181,7 +181,7 @@ const Header = () => {
         {mounted && (
           <button
             onClick={toggleTheme}
-            className="p-2 rounded-full text-black dark:text-white bg-gray-200 dark:bg-black/30 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors"
+            className="p-2 rounded-full text-black dark:text-white  dark:bg-black/30 hover:bg-gray-300 dark:hover:bg-gray-800 transition-colors cursor-pointer"
             aria-label="Toggle Theme"
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
