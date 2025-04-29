@@ -1032,113 +1032,180 @@ const PotentialInvestors = () => (
   </div>
 );
 
-const FounderSettings = () => (
-  <div className="bg-black border border-gray-800 rounded-xl p-6">
-    <h2 className="text-xl font-medium mb-6">Founder Account Settings</h2>
-    
-    <form className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-4">Profile Information</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Name</label>
-            <input
-              type="text"
-              value="John Smith"
-              className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
-            />
-          </div>
+const FounderSettings = () => {
+  const [formData, setFormData] = useState({
+    name: "John Smith",
+    email: "john@example.com",
+    projectType: "defi",
+    blockchain: "ethereum",
+    notifications: {
+      email: true,
+      milestones: true,
+      investors: true
+    }
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleNotificationChange = (key: string) => {
+    setFormData(prev => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        [key]: !prev.notifications[key as keyof typeof prev.notifications]
+      }
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Saving founder settings:", formData);
+    // Handle submission logic here
+  };
+
+  return (
+    <div className="bg-black border border-gray-800 rounded-xl p-6">
+      <h2 className="text-xl font-medium mb-6">Founder Account Settings</h2>
+      
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <div>
+          <h3 className="text-lg font-medium mb-4">Profile Information</h3>
           
-          <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
-            <input
-              type="email"
-              value="john@example.com"
-              className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
-            />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
+              />
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-medium mb-4">Project Preferences</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Primary Project Type</label>
-            <select className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none">
-              <option value="defi">DeFi</option>
-              <option value="nft">NFT</option>
-              <option value="infrastructure">Infrastructure</option>
-              <option value="gaming">Gaming</option>
-              <option value="dao">DAO</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
+        <div>
+          <h3 className="text-lg font-medium mb-4">Project Preferences</h3>
           
-          <div>
-            <label className="block text-sm font-medium mb-2">Preferred Blockchain</label>
-            <select className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none">
-              <option value="ethereum">Ethereum</option>
-              <option value="solana">Solana</option>
-              <option value="polygon">Polygon</option>
-              <option value="other">Other</option>
-            </select>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Primary Project Type</label>
+              <select 
+                name="projectType"
+                value={formData.projectType}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
+              >
+                <option value="defi">DeFi</option>
+                <option value="nft">NFT</option>
+                <option value="infrastructure">Infrastructure</option>
+                <option value="gaming">Gaming</option>
+                <option value="dao">DAO</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Preferred Blockchain</label>
+              <select 
+                name="blockchain"
+                value={formData.blockchain}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
+              >
+                <option value="ethereum">Ethereum</option>
+                <option value="solana">Solana</option>
+                <option value="polygon">Polygon</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-medium mb-4">Notification Settings</h3>
         
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Email Notifications</p>
-              <p className="text-sm text-gray-400">Receive emails about your projects</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked />
-              <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#FF7171] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-            </label>
-          </div>
+        <div>
+          <h3 className="text-lg font-medium mb-4">Notification Settings</h3>
           
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Milestone Reminders</p>
-              <p className="text-sm text-gray-400">Get reminded about upcoming milestones</p>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Email Notifications</p>
+                <p className="text-sm text-gray-400">Receive emails about your projects</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={formData.notifications.email}
+                  onChange={() => handleNotificationChange('email')}
+                />
+                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#FF7171] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </label>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked />
-              <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#FF7171] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-            </label>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">New Investor Alerts</p>
-              <p className="text-sm text-gray-400">Get notified when new investors show interest</p>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Milestone Reminders</p>
+                <p className="text-sm text-gray-400">Get reminded about upcoming milestones</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={formData.notifications.milestones}
+                  onChange={() => handleNotificationChange('milestones')}
+                />
+                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#FF7171] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </label>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked />
-              <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#FF7171] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-            </label>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">New Investor Alerts</p>
+                <p className="text-sm text-gray-400">Get notified when new investors show interest</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={formData.notifications.investors}
+                  onChange={() => handleNotificationChange('investors')}
+                />
+                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#FF7171] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </label>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div className="pt-4">
-        <button
-          type="submit"
-          className="px-6 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90"
-        >
-          Save Changes
-        </button>
-      </div>
-    </form>
-  </div>
-);
+        
+        <div className="pt-4">
+          <button
+            type="submit"
+            className="px-6 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
 
 // Investor Dashboard Components
 const InvestorDashboard = () => {
@@ -1587,6 +1654,264 @@ const BrowseProjects = () => (
   </div>
 ); 
 
+const InvestorSettings = () => {
+  const [formData, setFormData] = useState({
+    name: "Jane Doe",
+    email: "jane@example.com",
+    investorType: "angel",
+    investmentSize: "medium",
+    categories: {
+      defi: true,
+      nft: true,
+      gaming: true,
+      infrastructure: false,
+      dao: false,
+      social: false
+    },
+    notifications: {
+      newProjects: true,
+      milestones: true,
+      reports: false
+    }
+  });
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleCheckboxChange = (category: string) => {
+    setFormData(prev => ({
+      ...prev,
+      categories: {
+        ...prev.categories,
+        [category]: !prev.categories[category as keyof typeof prev.categories]
+      }
+    }));
+  };
+
+  const handleNotificationChange = (key: string) => {
+    setFormData(prev => ({
+      ...prev,
+      notifications: {
+        ...prev.notifications,
+        [key]: !prev.notifications[key as keyof typeof prev.notifications]
+      }
+    }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Handle form submission - send data to backend, etc.
+    console.log("Saving settings:", formData);
+    // Show success message or handle errors
+  };
+
+  return (
+    <div className="bg-black border border-gray-800 rounded-xl p-6">
+      <h2 className="text-xl font-medium mb-6">Investor Account Settings</h2>
+      
+      <form className="space-y-6" onSubmit={handleSubmit}>
+        <div>
+          <h3 className="text-lg font-medium mb-4">Profile Information</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none"
+              />
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h3 className="text-lg font-medium mb-4">Investment Preferences</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Investor Type</label>
+              <select 
+                name="investorType"
+                value={formData.investorType}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none"
+              >
+                <option value="angel">Angel Investor</option>
+                <option value="vc">VC Fund</option>
+                <option value="dao">DAO</option>
+                <option value="retail">Retail Investor</option>
+              </select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Preferred Investment Size</label>
+              <select 
+                name="investmentSize"
+                value={formData.investmentSize}
+                onChange={handleInputChange}
+                className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none"
+              >
+                <option value="small">Small ($1k - $10k)</option>
+                <option value="medium">Medium ($10k - $50k)</option>
+                <option value="large">Large ($50k - $250k)</option>
+                <option value="xlarge">X-Large ($250k+)</option>
+              </select>
+            </div>
+          </div>
+          
+          <div className="mt-4">
+            <label className="block text-sm font-medium mb-2">Investment Categories (select multiple)</label>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="defi" 
+                  className="mr-2" 
+                  checked={formData.categories.defi}
+                  onChange={() => handleCheckboxChange('defi')} 
+                />
+                <label htmlFor="defi">DeFi</label>
+              </div>
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="nft" 
+                  className="mr-2" 
+                  checked={formData.categories.nft}
+                  onChange={() => handleCheckboxChange('nft')} 
+                />
+                <label htmlFor="nft">NFT</label>
+              </div>
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="gaming" 
+                  className="mr-2" 
+                  checked={formData.categories.gaming}
+                  onChange={() => handleCheckboxChange('gaming')} 
+                />
+                <label htmlFor="gaming">Gaming</label>
+              </div>
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="infrastructure" 
+                  className="mr-2" 
+                  checked={formData.categories.infrastructure}
+                  onChange={() => handleCheckboxChange('infrastructure')} 
+                />
+                <label htmlFor="infrastructure">Infrastructure</label>
+              </div>
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="dao" 
+                  className="mr-2" 
+                  checked={formData.categories.dao}
+                  onChange={() => handleCheckboxChange('dao')} 
+                />
+                <label htmlFor="dao">DAO</label>
+              </div>
+              <div className="flex items-center">
+                <input 
+                  type="checkbox" 
+                  id="social" 
+                  className="mr-2" 
+                  checked={formData.categories.social}
+                  onChange={() => handleCheckboxChange('social')} 
+                />
+                <label htmlFor="social">Social</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <h3 className="text-lg font-medium mb-4">Notification Settings</h3>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">New Project Alerts</p>
+                <p className="text-sm text-gray-400">Receive emails about new projects that match your preferences</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={formData.notifications.newProjects}
+                  onChange={() => handleNotificationChange('newProjects')}
+                />
+                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#2F50FF] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </label>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Milestone Completion Notifications</p>
+                <p className="text-sm text-gray-400">Get notified when projects you've invested in complete milestones</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={formData.notifications.milestones}
+                  onChange={() => handleNotificationChange('milestones')}
+                />
+                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#2F50FF] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </label>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium">Performance Reports</p>
+                <p className="text-sm text-gray-400">Receive weekly performance reports for your investments</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={formData.notifications.reports}
+                  onChange={() => handleNotificationChange('reports')}
+                />
+                <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#2F50FF] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
+              </label>
+            </div>
+          </div>
+        </div>
+        
+        <div className="pt-4">
+          <button
+            type="submit"
+            className="px-6 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90"
+          >
+            Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};
+
 const InvestmentPerformance = () => (
   <div className="space-y-6">
     <div className="bg-black border border-gray-800 rounded-xl p-6">
@@ -1678,231 +2003,19 @@ const InvestmentPerformance = () => (
 const InvestorWallet = () => (
   <div className="bg-black border border-gray-800 rounded-xl p-6">
     <h2 className="text-xl font-medium mb-6">Wallet</h2>
-    
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <div className="bg-[#111] p-4 rounded-lg">
-        <div className="text-sm text-gray-400">Available Balance</div>
-        <div className="text-2xl font-semibold mt-2">$50,000</div>
+        <div className="text-sm text-gray-400">Total Balance</div>
+        <div className="text-2xl font-semibold mt-2">$10,500</div>
       </div>
       <div className="bg-[#111] p-4 rounded-lg">
-        <div className="text-sm text-gray-400">Invested</div>
+        <div className="text-sm text-gray-400">Pending Withdrawals</div>
+        <div className="text-2xl font-semibold mt-2">$2,000</div>
+      </div>
+      <div className="bg-[#111] p-4 rounded-lg">
+        <div className="text-sm text-gray-400">Total Investments</div>
         <div className="text-2xl font-semibold mt-2">$85,000</div>
       </div>
-      <div className="bg-[#111] p-4 rounded-lg">
-        <div className="text-sm text-gray-400">Total Value</div>
-        <div className="text-2xl font-semibold mt-2">$135,000</div>
-      </div>
     </div>
-    
-    <div className="flex gap-4 mb-6">
-      <button className="px-6 py-3 rounded-full font-medium text-white bg-gradient-to-r from-[#2F50FF] to-[#FF7171] hover:opacity-90 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="5" x2="12" y2="19"></line>
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        Deposit
-      </button>
-      <button className="px-6 py-3 rounded-full font-medium border border-gray-600 hover:bg-white/5 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="5" y1="12" x2="19" y2="12"></line>
-        </svg>
-        Withdraw
-      </button>
-    </div>
-    
-    <div>
-      <h3 className="text-lg font-medium mb-4">Recent Transactions</h3>
-      <div className="space-y-3">
-        <div className="border border-gray-800 rounded-lg p-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-900/30 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium">Deposit</p>
-              <p className="text-xs text-gray-400">May 12, 2023 • 10:24 AM</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-medium text-green-500">+$20,000</p>
-            <p className="text-xs text-gray-400">ETH Transaction</p>
-          </div>
-        </div>
-        
-        <div className="border border-gray-800 rounded-lg p-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-900/30 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
-                <polyline points="18 15 12 9 6 15"></polyline>
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium">Investment</p>
-              <p className="text-xs text-gray-400">May 10, 2023 • 2:15 PM</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-medium text-red-500">-$30,000</p>
-            <p className="text-xs text-gray-400">DeFi Lending Platform</p>
-          </div>
-        </div>
-        
-        <div className="border border-gray-800 rounded-lg p-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-900/30 rounded-full">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
-            <div>
-              <p className="font-medium">Deposit</p>
-              <p className="text-xs text-gray-400">May 5, 2023 • 9:30 AM</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="font-medium text-green-500">+$50,000</p>
-            <p className="text-xs text-gray-400">USDC Transaction</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
-const InvestorSettings = () => (
-  <div className="bg-black border border-gray-800 rounded-xl p-6">
-    <h2 className="text-xl font-medium mb-6">Investor Account Settings</h2>
-    
-    <form className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-4">Profile Information</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Name</label>
-            <input
-              type="text"
-              value="Jane Doe"
-              className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none"
-            />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-2">Email</label>
-            <input
-              type="email"
-              value="jane@example.com"
-              className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none"
-            />
-          </div>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-medium mb-4">Investment Preferences</h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">Investor Type</label>
-            <select className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none">
-              <option value="angel">Angel Investor</option>
-              <option value="vc">VC Fund</option>
-              <option value="dao">DAO</option>
-              <option value="retail">Retail Investor</option>
-            </select>
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-2">Preferred Investment Size</label>
-            <select className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none">
-              <option value="small">Small ($1k - $10k)</option>
-              <option value="medium">Medium ($10k - $50k)</option>
-              <option value="large">Large ($50k - $250k)</option>
-              <option value="xlarge">X-Large ($250k+)</option>
-            </select>
-          </div>
-        </div>
-        
-        <div className="mt-4">
-          <label className="block text-sm font-medium mb-2">Investment Categories (select multiple)</label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div className="flex items-center">
-              <input type="checkbox" id="defi" className="mr-2" checked />
-              <label htmlFor="defi">DeFi</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="nft" className="mr-2" checked />
-              <label htmlFor="nft">NFT</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="gaming" className="mr-2" checked />
-              <label htmlFor="gaming">Gaming</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="infrastructure" className="mr-2" />
-              <label htmlFor="infrastructure">Infrastructure</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="dao" className="mr-2" />
-              <label htmlFor="dao">DAO</label>
-            </div>
-            <div className="flex items-center">
-              <input type="checkbox" id="social" className="mr-2" />
-              <label htmlFor="social">Social</label>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-medium mb-4">Notification Settings</h3>
-        
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">New Project Alerts</p>
-              <p className="text-sm text-gray-400">Receive emails about new projects that match your preferences</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked />
-              <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#2F50FF] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-            </label>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Milestone Completion Notifications</p>
-              <p className="text-sm text-gray-400">Get notified when projects you've invested in complete milestones</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" checked />
-              <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#2F50FF] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-            </label>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Performance Reports</p>
-              <p className="text-sm text-gray-400">Receive weekly performance reports for your investments</p>
-            </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input type="checkbox" className="sr-only peer" />
-              <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#2F50FF] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
-            </label>
-          </div>
-        </div>
-      </div>
-      
-      <div className="pt-4">
-        <button
-          type="submit"
-          className="px-6 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90"
-        >
-          Save Changes
-        </button>
-      </div>
-    </form>
   </div>
 );

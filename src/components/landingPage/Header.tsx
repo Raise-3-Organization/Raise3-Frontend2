@@ -189,36 +189,49 @@ const Header = () => {
         )}
 
         <div ref={walletButtonRef} className="relative">
-          {isConnected ? (
+          {/* Only render the wallet content after mounting to prevent hydration mismatch */}
+          {mounted ? (
             <>
-              <button 
-                onClick={handleConnectWallet}
-                className="px-4 py-2 text-sm text-white rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 flex items-center gap-2 cursor-pointer"
-              >
-                <Wallet size={16} />
-                {formatAddress(address!)}
-              </button>
-              
-              {showWalletOptions && (
-                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#1c1c24] rounded-md shadow-md py-2 z-50">
+              {isConnected ? (
+                <>
                   <button 
-                    onClick={handleDisconnect}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-[#2c2c34] cursor-pointer"
-                    disabled={disconnecting}
+                    onClick={handleConnectWallet}
+                    className="px-4 py-2 text-sm text-white rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 flex items-center gap-2 cursor-pointer"
                   >
-                    <LogOut size={16} />
-                    {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                    <Wallet size={16} />
+                    {formatAddress(address!)}
                   </button>
-                </div>
+                  
+                  {showWalletOptions && (
+                    <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#1c1c24] rounded-md shadow-md py-2 z-50">
+                      <button 
+                        onClick={handleDisconnect}
+                        className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-[#2c2c34] cursor-pointer"
+                        disabled={disconnecting}
+                      >
+                        <LogOut size={16} />
+                        {disconnecting ? 'Disconnecting...' : 'Disconnect'}
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <button 
+                  onClick={handleConnectWallet}
+                  className="px-4 py-2 text-sm text-white rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 flex items-center gap-2 cursor-pointer"
+                >
+                  <Wallet size={16} />
+                  {connecting ? 'Connecting...' : 'Connect Wallet'}
+                </button>
               )}
             </>
           ) : (
+            // Show a skeleton button during server-side rendering and initial client render
             <button 
-              onClick={handleConnectWallet}
-              className="px-4 py-2 text-sm text-white rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2 text-sm text-white rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] opacity-90 flex items-center gap-2 cursor-pointer"
             >
               <Wallet size={16} />
-              {connecting ? 'Connecting...' : 'Connect Wallet'}
+              Connect Wallet
             </button>
           )}
         </div>
