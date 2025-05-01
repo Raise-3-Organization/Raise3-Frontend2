@@ -1,0 +1,19 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M6.09407 14.6767C6.20303 14.5677 6.35055 14.5059 6.50548 14.5059H20.5955C20.8355 14.5059 20.9555 14.7939 20.7881 14.9612L17.906 17.8433C17.797 17.9523 17.6495 18.0141 17.4946 18.0141H3.40457C3.16463 18.0141 3.04456 17.7261 3.21196 17.5587L6.09407 14.6767Z" fill="url(#paint0_linear_solana)"/>
+  <path d="M6.09407 6.15646C6.20726 6.04751 6.35477 5.9857 6.50548 5.9857H20.5955C20.8355 5.9857 20.9555 6.27366 20.7881 6.44105L17.906 9.32316C17.797 9.43212 17.6495 9.49393 17.4946 9.49393H3.40457C3.16463 9.49393 3.04456 9.20597 3.21196 9.03857L6.09407 6.15646Z" fill="url(#paint1_linear_solana)"/>
+  <path d="M17.906 10.4049C17.797 10.296 17.6495 10.2342 17.4946 10.2342H3.40457C3.16463 10.2342 3.04456 10.5221 3.21196 10.6895L6.09407 13.5716C6.20303 13.6806 6.35055 13.7424 6.50548 13.7424H20.5955C20.8355 13.7424 20.9555 13.4544 20.7881 13.2871L17.906 10.4049Z" fill="url(#paint2_linear_solana)"/>
+  <defs>
+    <linearGradient id="paint0_linear_solana" x1="19.5489" y1="2.5922" x2="8.05076" y2="23.0502" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00FFA3"/>
+      <stop offset="1" stop-color="#DC1FFF"/>
+    </linearGradient>
+    <linearGradient id="paint1_linear_solana" x1="14.3536" y1="-0.331989" x2="2.85551" y2="20.126" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00FFA3"/>
+      <stop offset="1" stop-color="#DC1FFF"/>
+    </linearGradient>
+    <linearGradient id="paint2_linear_solana" x1="16.9458" y1="1.12928" x2="5.4476" y2="21.5873" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00FFA3"/>
+      <stop offset="1" stop-color="#DC1FFF"/>
+    </linearGradient>
+  </defs>
+</svg> 

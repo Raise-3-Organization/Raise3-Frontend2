@@ -7,6 +7,7 @@ import { mainnet, sepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { injected, walletConnect } from '@wagmi/connectors';
 import { cookieStorage, createStorage } from '@wagmi/core';
+import { ContractProvider } from '../context/ContractContext';
 
 // Set up WalletConnect projectId
 const projectId = '1eebe528ca0ce94a99ceaa2e915058d7';
@@ -61,7 +62,9 @@ export function Providers({ children }: ProvidersProps) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class">
-          {children}
+          <ContractProvider>
+            {children}
+          </ContractProvider>
         </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>

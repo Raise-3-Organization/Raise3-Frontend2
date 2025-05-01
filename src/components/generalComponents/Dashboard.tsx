@@ -29,6 +29,13 @@ import {
   Building
 } from "lucide-react";
 import { useTheme } from "next-themes";
+import ProjectList from '../ProjectList';
+import ProjectActions from '../ProjectActions';
+import TransactionNotification, { useTransactionNotification } from '../TransactionNotification';
+import { v4 as uuidv4 } from 'uuid';
+import { useContract } from "@/context/ContractContext";
+import { ethers } from "ethers";
+import ContractInitializer from '../ContractInitializer';
 
 type UserRole = "founder" | "investor" | "both";
 type ActiveView = "founder" | "investor";
@@ -39,13 +46,19 @@ interface DashboardContextProps {
   setActiveSection: (section: string) => void;
   activeView: ActiveView;
   setActiveView: (view: ActiveView) => void;
+  addNotification: (message: string, type?: string, duration?: number) => string;
+  removeNotification: (id: string) => void;
+  updateNotification: (id: string, updates: any) => void;
 }
 
-const DashboardContext = createContext<DashboardContextProps>({
+export const DashboardContext = createContext<DashboardContextProps>({
   activeSection: "dashboard",
   setActiveSection: () => {},
   activeView: "founder",
   setActiveView: () => {},
+  addNotification: () => "",
+  removeNotification: () => {},
+  updateNotification: () => {},
 });
 
 const Dashboard = () => {
@@ -60,6 +73,14 @@ const Dashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Transaction notifications
+  const { 
+    notifications, 
+    addNotification, 
+    removeNotification, 
+    updateNotification 
+  } = useTransactionNotification();
+
   // Check if user is connected and registered
   useEffect(() => {
     setMounted(true);
@@ -275,7 +296,7 @@ const Dashboard = () => {
       case "projects":
         return <FounderProjects />;
       case "create-project":
-        return <CreateProject />;
+        return <ContractInitializer><CreateProject /></ContractInitializer>;
       case "milestones":
         return <FounderMilestones />;
       case "investors":
@@ -295,7 +316,7 @@ const Dashboard = () => {
       case "investments":
         return <InvestorInvestments />;
       case "browse-projects":
-        return <BrowseProjects />;
+        return <ContractInitializer><BrowseProjects /></ContractInitializer>;
       case "performance":
         return <InvestmentPerformance />;
       case "wallet":
@@ -330,7 +351,10 @@ const Dashboard = () => {
       setActiveView: (view) => {
         setActiveView(view);
         localStorage.setItem(`user-active-view-${address}`, view);
-      }
+      },
+      addNotification,
+      removeNotification,
+      updateNotification
     }}>
       <div className="min-h-screen flex flex-col bg-[#0B0B0F] text-white">
         {/* Header */}
@@ -523,6 +547,12 @@ const Dashboard = () => {
           </main>
         </div>
       </div>
+      
+      {/* Transaction Notifications */}
+      <TransactionNotification 
+        notifications={notifications} 
+        removeNotification={removeNotification} 
+      />
     </DashboardContext.Provider>
   );
 };
@@ -746,92 +776,9 @@ const FounderProjects = () => (
 const CreateProject = () => (
   <div className="bg-black border border-gray-800 rounded-xl p-6">
     <h2 className="text-xl font-medium mb-6">Create a New Project</h2>
-    <form className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium mb-2">Project Name</label>
-        <input
-          type="text"
-          className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
-          placeholder="Enter project name"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium mb-2">Category</label>
-        <select className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none">
-          <option value="">Select a category</option>
-          <option value="infrastructure">Infrastructure</option>
-          <option value="defi">DeFi</option>
-          <option value="gaming">Gaming</option>
-          <option value="nft">NFT</option>
-          <option value="dao">DAO</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium mb-2">Blockchain</label>
-        <select className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none">
-          <option value="">Select blockchain</option>
-          <option value="ethereum">Ethereum</option>
-          <option value="solana">Solana</option>
-          <option value="polygon">Polygon</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium mb-2">Funding Goal</label>
-        <div className="relative">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">$</span>
-          <input
-            type="number"
-            className="w-full pl-8 p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
-            placeholder="Amount in USD"
-          />
-        </div>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium mb-2">Project Description</label>
-        <textarea
-          className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none min-h-[100px]"
-          placeholder="Describe your project"
-        ></textarea>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium mb-2">Milestones</label>
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg">
-            <input type="text" className="flex-1 bg-transparent outline-none" placeholder="Milestone 1" />
-            <input type="text" className="w-24 bg-transparent outline-none text-right" placeholder="Date" />
-          </div>
-          <div className="flex items-center gap-2 p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg">
-            <input type="text" className="flex-1 bg-transparent outline-none" placeholder="Milestone 2" />
-            <input type="text" className="w-24 bg-transparent outline-none text-right" placeholder="Date" />
-          </div>
-          <button className="flex items-center gap-2 text-[#FF7171] text-sm">
-            <PlusCircle size={16} /> Add Another Milestone
-          </button>
-        </div>
-      </div>
-      
-      <div className="flex gap-4 pt-4">
-        <button
-          type="button"
-          className="px-6 py-3 border border-gray-600 rounded-full text-white font-semibold hover:bg-white/5 transition-colors"
-        >
-          Save as Draft
-        </button>
-        <button
-          type="submit"
-          className="px-6 py-3 rounded-full font-semibold text-white bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90"
-        >
-          Create Project
-        </button>
-      </div>
-    </form>
+    
+    {/* Smart Contract Integrated Project Creation */}
+    <ProjectActions />
   </div>
 );
 
@@ -1246,7 +1193,7 @@ const InvestorDashboard = () => {
           <div className="border border-gray-800 rounded-lg overflow-hidden group">
             <div className="h-40 bg-gray-800 relative overflow-hidden">
               <Image 
-                src="/project-image-1.jpg" 
+                src="/image.png" 
                 alt="Project" 
                 width={500}
                 height={200}
@@ -1257,12 +1204,12 @@ const InvestorDashboard = () => {
               </div>
             </div>
             <div className="p-4">
-              <h3 className="font-medium">Cross-Chain Bridge Protocol</h3>
-              <p className="text-sm text-gray-400 mt-1">Infrastructure • Ethereum/Solana</p>
+              <h3 className="font-medium">DeFi Lending Protocol</h3>
+              <p className="text-sm text-gray-400 mt-1">DeFi • Ethereum</p>
               <div className="mt-3 flex justify-between items-center">
                 <div>
                   <p className="text-xs text-gray-400">Raising</p>
-                  <p className="font-medium">$250,000</p>
+                  <p className="font-medium">$120,000</p>
                 </div>
                 <div>
                   <p className="text-xs text-gray-400">Minimum</p>
@@ -1282,7 +1229,7 @@ const InvestorDashboard = () => {
           <div className="border border-gray-800 rounded-lg overflow-hidden group">
             <div className="h-40 bg-gray-800 relative overflow-hidden">
               <Image 
-                src="/project-image-2.jpg" 
+                src="/Frame 27 (3).png" 
                 alt="Project" 
                 width={500}
                 height={200}
@@ -1513,143 +1460,8 @@ const BrowseProjects = () => (
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="border border-gray-800 rounded-lg overflow-hidden group">
-          <div className="h-40 bg-gray-800 relative overflow-hidden">
-            <Image 
-              src="/project-image-1.jpg" 
-              alt="Project" 
-              width={500}
-              height={200}
-              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
-            />
-            <div className="absolute top-2 right-2 bg-green-900/70 text-green-400 text-xs px-2 py-1 rounded-full">
-              Active
-            </div>
-          </div>
-          <div className="p-4">
-            <h3 className="font-medium">Cross-Chain Bridge Protocol</h3>
-            <p className="text-sm text-gray-400 mt-1">Infrastructure • Ethereum/Solana</p>
-            <div className="mt-3 flex justify-between items-center">
-              <div>
-                <p className="text-xs text-gray-400">Raising</p>
-                <p className="font-medium">$250,000</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Minimum</p>
-                <p className="font-medium">$5,000</p>
-              </div>
-              <div>
-                <button className="text-[#FF7171] flex items-center gap-1 hover:underline">
-                  View <ArrowUpRight size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="border border-gray-800 rounded-lg overflow-hidden group">
-          <div className="h-40 bg-gray-800 relative overflow-hidden">
-            <Image 
-              src="/project-image-2.jpg" 
-              alt="Project" 
-              width={500}
-              height={200}
-              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
-            />
-            <div className="absolute top-2 right-2 bg-purple-900/70 text-purple-400 text-xs px-2 py-1 rounded-full">
-              New
-            </div>
-          </div>
-          <div className="p-4">
-            <h3 className="font-medium">Decentralized Identity Solution</h3>
-            <p className="text-sm text-gray-400 mt-1">Infrastructure • Polygon</p>
-            <div className="mt-3 flex justify-between items-center">
-              <div>
-                <p className="text-xs text-gray-400">Raising</p>
-                <p className="font-medium">$180,000</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Minimum</p>
-                <p className="font-medium">$2,500</p>
-              </div>
-              <div>
-                <button className="text-[#FF7171] flex items-center gap-1 hover:underline">
-                  View <ArrowUpRight size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="border border-gray-800 rounded-lg overflow-hidden group">
-          <div className="h-40 bg-gray-800 relative overflow-hidden">
-            <Image 
-              src="/project-image-3.jpg" 
-              alt="Project" 
-              width={500}
-              height={200}
-              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
-            />
-            <div className="absolute top-2 right-2 bg-green-900/70 text-green-400 text-xs px-2 py-1 rounded-full">
-              Active
-            </div>
-          </div>
-          <div className="p-4">
-            <h3 className="font-medium">DeFi Lending Aggregator</h3>
-            <p className="text-sm text-gray-400 mt-1">DeFi • Ethereum</p>
-            <div className="mt-3 flex justify-between items-center">
-              <div>
-                <p className="text-xs text-gray-400">Raising</p>
-                <p className="font-medium">$300,000</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Minimum</p>
-                <p className="font-medium">$10,000</p>
-              </div>
-              <div>
-                <button className="text-[#FF7171] flex items-center gap-1 hover:underline">
-                  View <ArrowUpRight size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div className="border border-gray-800 rounded-lg overflow-hidden group">
-          <div className="h-40 bg-gray-800 relative overflow-hidden">
-            <Image 
-              src="/project-image-4.jpg" 
-              alt="Project" 
-              width={500}
-              height={200}
-              className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
-            />
-            <div className="absolute top-2 right-2 bg-yellow-900/70 text-yellow-400 text-xs px-2 py-1 rounded-full">
-              Filling Fast
-            </div>
-          </div>
-          <div className="p-4">
-            <h3 className="font-medium">NFT Gaming Platform</h3>
-            <p className="text-sm text-gray-400 mt-1">Gaming • Polygon</p>
-            <div className="mt-3 flex justify-between items-center">
-              <div>
-                <p className="text-xs text-gray-400">Raising</p>
-                <p className="font-medium">$200,000</p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Minimum</p>
-                <p className="font-medium">$1,000</p>
-              </div>
-              <div>
-                <button className="text-[#FF7171] flex items-center gap-1 hover:underline">
-                  View <ArrowUpRight size={14} />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Smart Contract Integrated Project List */}
+      <ProjectList />
     </div>
   </div>
 ); 
@@ -2000,22 +1812,217 @@ const InvestmentPerformance = () => (
   </div>
 );
 
-const InvestorWallet = () => (
-  <div className="bg-black border border-gray-800 rounded-xl p-6">
-    <h2 className="text-xl font-medium mb-6">Wallet</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="bg-[#111] p-4 rounded-lg">
-        <div className="text-sm text-gray-400">Total Balance</div>
-        <div className="text-2xl font-semibold mt-2">$10,500</div>
+const InvestorWallet = () => {
+  return (
+    <div className="space-y-6">
+      <div className="bg-black border border-gray-800 rounded-xl p-6">
+        <h2 className="text-xl font-medium mb-6">Wallet</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-[#111] p-4 rounded-lg">
+            <div className="text-sm text-gray-400">Total Balance</div>
+            <div className="text-2xl font-semibold mt-2">$10,500</div>
+          </div>
+          <div className="bg-[#111] p-4 rounded-lg">
+            <div className="text-sm text-gray-400">Pending Withdrawals</div>
+            <div className="text-2xl font-semibold mt-2">$2,000</div>
+          </div>
+          <div className="bg-[#111] p-4 rounded-lg">
+            <div className="text-sm text-gray-400">Total Investments</div>
+            <div className="text-2xl font-semibold mt-2">$85,000</div>
+          </div>
+        </div>
+        
+        <div className="flex gap-4 mt-6">
+          <button className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-[#2F50FF] to-[#4364ff] hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+            Deposit
+          </button>
+          <button className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-[#FF7171] to-[#ff8585] hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+            Withdraw
+          </button>
+        </div>
       </div>
-      <div className="bg-[#111] p-4 rounded-lg">
-        <div className="text-sm text-gray-400">Pending Withdrawals</div>
-        <div className="text-2xl font-semibold mt-2">$2,000</div>
+
+      {/* Donation Form Section - Moved from Founder to Investor tab */}
+      <div className="bg-black border border-gray-800 rounded-xl p-6">
+        <h2 className="text-xl font-medium mb-6">Invest in Project</h2>
+        <ContractInitializer>
+          <InvestorDonationForm />
+        </ContractInitializer>
       </div>
-      <div className="bg-[#111] p-4 rounded-lg">
-        <div className="text-sm text-gray-400">Total Investments</div>
-        <div className="text-2xl font-semibold mt-2">$85,000</div>
+
+      <div className="bg-black border border-gray-800 rounded-xl p-6">
+        <h2 className="text-xl font-medium mb-6">Transaction History</h2>
+        
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-800">
+            <thead>
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Type</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Amount</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-800">
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-blue-500/20 rounded-full mr-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
+                    </div>
+                    <span>Deposit</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-green-500">+$5,000</td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-400">2023-06-15</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-900/30 text-green-500">Completed</span>
+                </td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-red-500/20 rounded-full mr-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                    </div>
+                    <span>Withdraw</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-red-500">-$2,000</td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-400">2023-06-10</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-2 py-1 text-xs rounded-full bg-yellow-900/30 text-yellow-500">Pending</span>
+                </td>
+              </tr>
+              <tr>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="p-2 bg-purple-500/20 rounded-full mr-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-purple-500"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
+                    </div>
+                    <span>Investment</span>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-red-500">-$30,000</td>
+                <td className="px-6 py-4 whitespace-nowrap text-gray-400">2023-05-28</td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-900/30 text-green-500">Completed</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+// Component to handle just the donation form for investors
+const InvestorDonationForm = () => {
+  const { isConnected: isContractConnected, donateToProject } = useContract();
+  const { isConnected: isWagmiConnected } = useAccount();
+  const { addNotification } = React.useContext(DashboardContext);
+  const [donationData, setDonationData] = useState({
+    projectId: '',
+    amount: ''
+  });
+  const [loading, setLoading] = useState(false);
+  
+  // Handle donation input changes
+  const handleDonationChange = (e) => {
+    const { name, value } = e.target;
+    setDonationData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Handle donation submission
+  const handleDonate = async (e) => {
+    e.preventDefault();
+    
+    // Check both Wagmi and contract connection status
+    if (!isWagmiConnected) {
+      addNotification('Please connect your wallet first', 'error');
+      return;
+    }
+    
+    // If Wagmi says we're connected but contract doesn't, try to force a refresh
+    if (!isContractConnected) {
+      addNotification('Wallet connected but contract not initialized. Please refresh the page.', 'error');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Show pending notification
+      addNotification('Processing donation, please confirm in your wallet...', 'info', 0);
+
+      const tx = await donateToProject(
+        donationData.projectId,
+        ethers.utils.parseEther(donationData.amount)
+      );
+
+      // Update notification while waiting for transaction
+      addNotification('Transaction submitted. Waiting for confirmation...', 'info', 0);
+      
+      // Wait for transaction confirmation
+      await tx.wait();
+      
+      // Show success notification
+      addNotification(`Successfully donated ${donationData.amount} ETH to project #${donationData.projectId}!`, 'success');
+      
+      // Reset form
+      setDonationData({
+        projectId: '',
+        amount: ''
+      });
+    } catch (error) {
+      console.error('Error donating to project:', error);
+      addNotification(`Error donating: ${error.message || 'Unknown error'}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div>
+      <form onSubmit={handleDonate}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-white">Project ID</label>
+            <input
+              type="number"
+              name="projectId"
+              value={donationData.projectId}
+              onChange={handleDonationChange}
+              className="mt-1 block w-full rounded-md border-gray-600 bg-gray-800 text-white shadow-sm focus:border-[#FF7171] focus:ring-[#FF7171]"
+              required
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-white">Amount (ETH)</label>
+            <input
+              type="number"
+              name="amount"
+              value={donationData.amount}
+              onChange={handleDonationChange}
+              className="mt-1 block w-full rounded-md border-gray-600 bg-gray-800 text-white shadow-sm focus:border-[#FF7171] focus:ring-[#FF7171]"
+              step="0.01"
+              required
+            />
+          </div>
+          
+          <button
+            type="submit"
+            disabled={loading || !isWagmiConnected || !isContractConnected}
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF7171] disabled:opacity-50"
+          >
+            {loading ? 'Processing...' : 'Invest in Project'}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+};

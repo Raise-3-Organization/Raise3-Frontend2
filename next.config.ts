@@ -2,7 +2,18 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ['res.cloudinary.com'],
+    domains: [
+      'res.cloudinary.com', 
+      'cdn.pixabay.com', 
+      'seeklogo.com', 
+      'raw.githubusercontent.com'
+    ],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
   
   webpack: (config) => {
