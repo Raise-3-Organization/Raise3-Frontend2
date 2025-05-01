@@ -1,37 +1,54 @@
 import { ethers } from 'ethers';
 import Raise3MileStoneABI from '../abis/Raise3MileStone.json';
 
-// Contract address from environment variable or fallback
-// Using a known Sepolia testnet address as fallback for development
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3"; 
+// Contract address for Lisk Sepolia testnet (chain ID 4202)
+export const CONTRACT_ADDRESS = "0xAED8c5D4926109E87Aeb4D09bBBcbc457dB54E56";
+
+export { Raise3MileStoneABI };
 
 // Cache the contract instance to avoid repeated connection attempts
 let cachedContract = null;
 let cachedSigner = null;
 
+// Utility function to create contract data for direct transactions
+export const getCreateCampaignData = (metaUrl, goalAmount, initialRaised = 0) => {
+  // Create contract interface
+  const iface = new ethers.Interface(Raise3MileStoneABI);
+
+  // Encode the function call
+  return iface.encodeFunctionData(
+    'createCampaign',
+    [
+      metaUrl,
+      goalAmount,
+      initialRaised
+    ]
+  );
+};
+
 export const getContract = async (signer) => {
   try {
     // Return cached contract if we have one for the same signer
-    if (cachedContract && cachedSigner && 
-        cachedSigner._address === signer._address) {
+    if (cachedContract && cachedSigner &&
+      cachedSigner._address === signer._address) {
       console.log("Using cached contract instance");
       return cachedContract;
     }
-    
+
     console.log("Getting contract at address:", CONTRACT_ADDRESS);
     const contract = new ethers.Contract(
       CONTRACT_ADDRESS,
       Raise3MileStoneABI,
       signer
     );
-    
+
     // Cache the contract and signer for future use
     cachedContract = contract;
     cachedSigner = signer;
-    
+
     // Log available functions for debugging
     console.log("Contract functions:", Object.keys(contract.functions || {}).join(", "));
-    
+
     return contract;
   } catch (error) {
     console.error("Error getting contract:", error);
@@ -39,278 +56,365 @@ export const getContract = async (signer) => {
   }
 };
 
-// Contract read functions
-export const getProjectsCount = async (provider) => {
+// Read function - Get total number of campaigns
+export const getCampaignsCount = async (provider) => {
   try {
-    console.log("Getting projects count from contract");
+    console.log("Getting campaigns count from contract at address:", CONTRACT_ADDRESS);
     const contract = new ethers.Contract(
       CONTRACT_ADDRESS,
       Raise3MileStoneABI,
       provider
     );
-    
-    // Try standard getProjectsCount first
-    try {
-      const count = await contract.getProjectsCount();
-      return count.toNumber();
-    } catch (countError) {
-      console.log("Standard getProjectsCount failed, trying alternatives:", countError.message);
-      
-      // Try alternative approaches from documentation
+
+    // Skip the problematic getCampaignLen() function and go straight to manual counting
+    console.log("Using manual approach to count campaigns");
+    let campaignCount = 0;
+    let continueChecking = true;
+
+    while (continueChecking && campaignCount < 100) { // Safety limit
       try {
-        // Try getCampaignLen from documentation
-        if (typeof contract.getCampaignLen === 'function') {
-          console.log("Trying getCampaignLen() instead");
-          const count = await contract.getCampaignLen();
-          return count.toNumber();
-        }
-        
-        // Fallback to returning zero
-        console.log("No project count function found, returning 0");
-        return 0;
-      } catch (altError) {
-        console.error("Alternative methods failed too:", altError.message);
-        return 0;
+        console.log(`Checking if campaign ${campaignCount} exists...`);
+        await contract.getCampaignDetails(campaignCount);
+        console.log(`Found valid campaign at index: ${campaignCount}`);
+        campaignCount++;
+      } catch (e) {
+        console.log(`No more campaigns found at index ${campaignCount}:`, e.message);
+        continueChecking = false;
       }
     }
+
+    console.log(`Found ${campaignCount} campaigns through manual checking`);
+    return campaignCount;
   } catch (error) {
-    console.error("Error getting projects count:", error);
-    // Return 0 instead of throwing - this allows the UI to continue working
-    return 0;
+    console.error("Error in getCampaignsCount:", error);
+    return 0; // Return 0 if there's an error
   }
 };
 
-export const getProject = async (provider, projectId) => {
+// Read function - Get campaign details
+export const getCampaignDetails = async (provider, campaignId) => {
   try {
     const contract = new ethers.Contract(
       CONTRACT_ADDRESS,
       Raise3MileStoneABI,
       provider
     );
-    const project = await contract.getProject(projectId);
-    return project;
-  } catch (error) {
-    console.error(`Error getting project ${projectId}:`, error);
-    throw error;
-  }
-};
 
-// Contract write functions
-export const submitProject = async (signer, name, description, goal, milestones) => {
-  try {
-    console.log("Starting project submission with direct approach");
-    
-    // Force wallet connection to trigger popup if needed
-    if (window.ethereum) {
-      console.log("Requesting wallet accounts to trigger popup");
-      try {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-      } catch (walletError) {
-        console.log("Wallet account request:", walletError.message);
-      }
-    }
-    
-    // Get signer's address
-    const signerAddress = await signer.getAddress();
-    console.log("Signer address:", signerAddress);
-    
-    // Create a simplified contract instance with just the function we need
-    const contractABI = [
-      "function submitProject(string name, string description, uint256 goal, tuple(string milestoneName, string milestoneDescription, uint256 fundNeeded, bool isComplete, bool voting, bool isApproved, uint256 totalVoters, uint256 startDate, uint256 endDate)[] milestones) returns (bool)"
-    ];
-    
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
-    
-    // Format milestone data properly
-    const formattedMilestones = milestones.map(m => [
-      m.milestoneName || "", 
-      m.milestoneDescription || "", 
-      m.fundNeeded || ethers.utils.parseEther("0"), 
-      false, 
-      false, 
-      false, 
-      ethers.BigNumber.from(0), 
-      ethers.BigNumber.from(0), 
-      ethers.BigNumber.from(0)
-    ]);
-    
-    console.log("Sending transaction with these parameters:", {
-      name,
-      description,
-      goal: goal.toString(),
-      milestonesCount: formattedMilestones.length
-    });
-    
-    // Use a very high gas limit to bypass estimation
-    const options = {
-      gasLimit: 10000000 // 10 million gas should be more than enough
+    const details = await contract.getCampaignDetails(campaignId);
+    return {
+      metaUrl: details[0],
+      goalAmount: details[1],
+      totalRaised: details[2],
+      founder: details[3],
+      token: details[4]
     };
-    
-    console.log("Submitting transaction...");
-    
-    // Make the actual call with a timeout to detect if wallet isn't responding
-    let walletPromptTimeout = setTimeout(() => {
-      console.log("Wallet confirmation taking longer than expected. Check if your wallet popup is hidden or blocked.");
-    }, 3000);
-    
-    // Make the actual call
-    const tx = await contract.submitProject(
-      name,
-      description,
-      goal,
-      formattedMilestones,
-      options
-    );
-    
-    // Clear timeout as wallet responded
-    clearTimeout(walletPromptTimeout);
-    
-    console.log("Transaction sent! Hash:", tx.hash);
-    console.log("Waiting for confirmation...");
-    
-    // Wait for the transaction to be mined
-    const receipt = await tx.wait();
-    console.log("Transaction confirmed in block:", receipt.blockNumber);
-    
-    return tx;
   } catch (error) {
-    console.error("Failed to submit project:", error);
-    
-    // Check for common error types
-    if (error.code === 4001) {
-      throw new Error("Transaction rejected in wallet");
-    } else if (error.code === "UNPREDICTABLE_GAS_LIMIT") {
-      throw new Error("Contract rejected the transaction - check that your inputs are valid and you have the correct permissions");
-    } else if (error.message && error.message.includes("transaction")) {
-      throw new Error(`Transaction error: ${error.message}`);
-    }
-    
+    console.error(`Error getting campaign ${campaignId} details:`, error);
     throw error;
   }
 };
 
-export const submitProjectWithRawSignature = async (signer, name, description, goal, milestones) => {
+// Read function - Get milestone details
+export const getMilestoneDetails = async (provider, campaignId, milestoneId) => {
   try {
-    // Get a low-level contract without the high-level ethers.js interface
-    const address = CONTRACT_ADDRESS;
-    const abi = ['function submitProject(string,string,uint256,(string,string,uint256,bool,bool,bool,uint256,uint256,uint256)[]) returns (bool)'];
-    const contract = new ethers.Contract(address, abi, signer);
-    
-    console.log("Using raw ABI with specific function signature");
-    
-    // Manually format the milestone data to match exactly what the contract expects
-    const formattedMilestones = milestones.map(m => [
-      m.milestoneName,
-      m.milestoneDescription,
-      m.fundNeeded,
-      false, // isComplete
-      false, // voting
-      false, // isApproved
-      0,     // totalVoters
-      0,     // startDate
-      0      // endDate
-    ]);
-    
-    // Call with manual gas limit
-    const tx = await contract.submitProject(
-      name,
-      description,
-      goal,
-      formattedMilestones,
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      Raise3MileStoneABI,
+      provider
+    );
+
+    const milestone = await contract._milestones(campaignId, milestoneId);
+    return {
+      milestoneDescription: milestone.milestoneDescription,
+      isApproved: milestone.isApproved,
+      amount: milestone.amount,
+      completed: milestone.completed
+    };
+  } catch (error) {
+    console.error(`Error getting milestone details:`, error);
+    throw error;
+  }
+};
+
+// Read function - Get investor details
+export const getInvestorDetails = async (provider, investorAddress) => {
+  try {
+    const contract = new ethers.Contract(
+      CONTRACT_ADDRESS,
+      Raise3MileStoneABI,
+      provider
+    );
+
+    const details = await contract.getInvestorDetails(investorAddress);
+    return {
+      amount: details[0],
+      token: details[1],
+      investorAddress: details[2],
+      numberOfCampaign: details[3]
+    };
+  } catch (error) {
+    console.error(`Error getting investor details:`, error);
+    throw error;
+  }
+};
+
+// FOUNDER FUNCTIONS
+
+// Create a new campaign
+export const createCampaign = async (signer, metaUrl, goalAmount, initialRaised = 0) => {
+  try {
+    console.log("Creating campaign with params:", { metaUrl, goalAmount });
+    const contract = await getContract(signer);
+
+    const tx = await contract.createCampaign(
+      metaUrl,
+      goalAmount,
+      initialRaised,
       {
-        gasLimit: 10000000 // Very high gas limit
+        gasLimit: 5000000 // Set appropriate gas limit
       }
     );
-    
-    await tx.wait();
+
+    console.log("Campaign creation transaction sent:", tx.hash);
+    const receipt = await tx.wait();
+    console.log("Campaign created in block:", receipt.blockNumber);
+
     return tx;
   } catch (error) {
-    console.error("Error with raw signature:", error);
+    console.error("Failed to create campaign:", error);
     throw error;
   }
 };
 
-export const donateToProject = async (signer, projectId, amount) => {
+// Add a milestone to an existing campaign
+export const addMilestone = async (signer, campaignIndex, amount, description) => {
   try {
     const contract = await getContract(signer);
-    const tx = await contract.donateToken(projectId, amount);
+    const tx = await contract.addMilestone(
+      campaignIndex,
+      amount,
+      description,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Add milestone transaction sent:", tx.hash);
     await tx.wait();
     return tx;
   } catch (error) {
-    console.error(`Error donating to project ${projectId}:`, error);
+    console.error(`Error adding milestone:`, error);
     throw error;
   }
 };
 
-export const voteOnMilestone = async (signer, projectId, milestoneId, voteOption) => {
+// Mark a milestone as complete
+export const completeMilestone = async (signer, campaignIndex, milestoneId) => {
   try {
     const contract = await getContract(signer);
-    const tx = await contract.vote(projectId, milestoneId, voteOption);
+    const tx = await contract.completeMilestone(
+      campaignIndex,
+      milestoneId,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Complete milestone transaction sent:", tx.hash);
     await tx.wait();
     return tx;
   } catch (error) {
-    console.error(`Error voting on milestone:`, error);
+    console.error(`Error completing milestone:`, error);
     throw error;
   }
 };
 
-export const createVoting = async (signer, projectId, milestoneId) => {
+// Withdraw funds from a completed milestone
+export const withdrawMilestone = async (signer, campaignIndex, milestoneId) => {
   try {
     const contract = await getContract(signer);
-    const tx = await contract.createVoting(projectId, milestoneId);
+    const tx = await contract.withdrawMilestone(
+      campaignIndex,
+      milestoneId,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Withdraw milestone transaction sent:", tx.hash);
     await tx.wait();
     return tx;
   } catch (error) {
-    console.error(`Error creating voting:`, error);
+    console.error(`Error withdrawing milestone funds:`, error);
     throw error;
   }
 };
 
-// Admin functions
-export const approveProject = async (signer, projectId) => {
+// INVESTOR FUNCTIONS
+
+// Setup investor account
+export const setupInvestorAccount = async (signer, amount, tokenAddress) => {
   try {
     const contract = await getContract(signer);
-    const tx = await contract.approveProject(projectId);
+    const tx = await contract.foundInvestorAccount(
+      amount,
+      tokenAddress,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Setup investor account transaction sent:", tx.hash);
     await tx.wait();
     return tx;
   } catch (error) {
-    console.error(`Error approving project ${projectId}:`, error);
+    console.error(`Error setting up investor account:`, error);
     throw error;
   }
 };
 
-export const rejectProject = async (signer, projectId) => {
+// Invest in a campaign
+export const investInCampaign = async (signer, campaignIndex, amount) => {
   try {
     const contract = await getContract(signer);
-    const tx = await contract.rejectProject(projectId);
+    const tx = await contract.founderCampaign(
+      campaignIndex,
+      amount,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Investment transaction sent:", tx.hash);
     await tx.wait();
     return tx;
   } catch (error) {
-    console.error(`Error rejecting project ${projectId}:`, error);
+    console.error(`Error investing in campaign:`, error);
     throw error;
   }
 };
 
-export const activateProject = async (signer, projectId) => {
+// ADMIN FUNCTIONS
+
+// Grant founder role to an address
+export const grantFounderRole = async (signer, accountAddress) => {
   try {
     const contract = await getContract(signer);
-    const tx = await contract.activateProject(projectId);
+    const tx = await contract.grantFounderRole(
+      accountAddress,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Grant founder role transaction sent:", tx.hash);
     await tx.wait();
     return tx;
   } catch (error) {
-    console.error(`Error activating project ${projectId}:`, error);
+    console.error(`Error granting founder role:`, error);
     throw error;
   }
 };
 
-export const acceptProject = async (signer, projectId) => {
+// Grant investor role to an address
+export const grantInvestorRole = async (signer, accountAddress, amount, tokenAddress) => {
   try {
     const contract = await getContract(signer);
-    const tx = await contract.acceptProject(projectId);
+    const tx = await contract.grantInvestorRole(
+      accountAddress,
+      amount,
+      tokenAddress,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Grant investor role transaction sent:", tx.hash);
     await tx.wait();
     return tx;
   } catch (error) {
-    console.error(`Error accepting project ${projectId}:`, error);
+    console.error(`Error granting investor role:`, error);
     throw error;
   }
-}; 
+};
+
+// Approve a campaign
+export const approveCampaign = async (signer, campaignIndex) => {
+  try {
+    const contract = await getContract(signer);
+    const tx = await contract.approveCampaign(
+      campaignIndex,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Approve campaign transaction sent:", tx.hash);
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error(`Error approving campaign:`, error);
+    throw error;
+  }
+};
+
+// Approve a milestone
+export const approveMilestone = async (signer, campaignIndex, milestoneIndex) => {
+  try {
+    const contract = await getContract(signer);
+    const tx = await contract.approveMilestone(
+      campaignIndex,
+      milestoneIndex,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Approve milestone transaction sent:", tx.hash);
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error(`Error approving milestone:`, error);
+    throw error;
+  }
+};
+
+// Flag a campaign (e.g., for suspicious activity)
+export const flagCampaign = async (signer, campaignIndex) => {
+  try {
+    const contract = await getContract(signer);
+    const tx = await contract.flagCampaign(
+      campaignIndex,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Flag campaign transaction sent:", tx.hash);
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error(`Error flagging campaign:`, error);
+    throw error;
+  }
+};
+
+// Complete a campaign 
+export const completeCampaign = async (signer, campaignIndex) => {
+  try {
+    const contract = await getContract(signer);
+    const tx = await contract.CompleteCampaign(
+      campaignIndex,
+      {
+        gasLimit: 3000000
+      }
+    );
+
+    console.log("Complete campaign transaction sent:", tx.hash);
+    await tx.wait();
+    return tx;
+  } catch (error) {
+    console.error(`Error completing campaign:`, error);
+    throw error;
+  }
+};

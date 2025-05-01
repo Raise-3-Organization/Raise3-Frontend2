@@ -1,755 +1,596 @@
 [
+  { "type": "constructor", "inputs": [], "stateMutability": "nonpayable" },
   {
+    "type": "function",
+    "name": "CompleteCampaign",
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_raise3Token",
-        "type": "address"
+        "name": "_campaignIndex",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "constructor"
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "previousOwner",
-        "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
-      }
-    ],
-    "name": "OwnershipTransferred",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "ProjectAccepted",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "ProjectActivated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "ProjectApproved",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "ProjectCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "userAddress",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "donationAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "ProjectDonated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "ProjectRejected",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "milestoneID",
-        "type": "uint256"
-      }
-    ],
-    "name": "VoteCreated",
-    "type": "event"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "milestoneID",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "address",
-        "name": "donorAddress",
-        "type": "address"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "voteOption",
-        "type": "bool"
-      }
-    ],
-    "name": "VotedOnMilestone",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "acceptProject",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "activateProject",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "approveProject",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_milestoneID",
-        "type": "uint256"
-      }
-    ],
-    "name": "createVoting",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_donationAmount",
-        "type": "uint256"
-      }
-    ],
-    "name": "donateToken",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "getMyDonations",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "getProject",
-    "outputs": [
-      {
-        "components": [
-          {
-            "internalType": "uint256",
-            "name": "projectID",
-            "type": "uint256"
-          },
-          {
-            "internalType": "address",
-            "name": "owner",
-            "type": "address"
-          },
-          {
-            "internalType": "string",
-            "name": "projectName",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "projectDescription",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fundraisingGoal",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalFundRaised",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "remainingFund",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "submissionTime",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "isApproved",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "isRejected",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "isActive",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "isAccepted",
-            "type": "bool"
-          },
-          {
-            "components": [
-              {
-                "internalType": "string",
-                "name": "milestoneName",
-                "type": "string"
-              },
-              {
-                "internalType": "string",
-                "name": "milestoneDescription",
-                "type": "string"
-              },
-              {
-                "internalType": "uint256",
-                "name": "fundNeeded",
-                "type": "uint256"
-              },
-              {
-                "internalType": "bool",
-                "name": "isComplete",
-                "type": "bool"
-              },
-              {
-                "internalType": "bool",
-                "name": "voting",
-                "type": "bool"
-              },
-              {
-                "internalType": "bool",
-                "name": "isApproved",
-                "type": "bool"
-              },
-              {
-                "internalType": "uint256",
-                "name": "totalVoters",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "startDate",
-                "type": "uint256"
-              },
-              {
-                "internalType": "uint256",
-                "name": "endDate",
-                "type": "uint256"
-              }
-            ],
-            "internalType": "struct RaiseMilestone.MileStone[]",
-            "name": "milestones",
-            "type": "tuple[]"
-          }
-        ],
-        "internalType": "struct RaiseMilestone.Project",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
+    "type": "function",
+    "name": "DEFAULT_ADMIN_ROLE",
     "inputs": [],
-    "name": "getProjectsCount",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
   },
   {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_milestoneID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_userAddress",
-        "type": "address"
-      }
-    ],
-    "name": "hasVoted",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "uint256",
-        "name": "_milestoneID",
-        "type": "uint256"
-      }
-    ],
-    "name": "isVotingEnded",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "_userAddress",
-        "type": "address"
-      }
-    ],
-    "name": "isWhitelistedDonor",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
+    "type": "function",
+    "name": "FOUNDER_ROLE",
     "inputs": [],
-    "name": "owner",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
+    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
   },
   {
-    "inputs": [
+    "type": "function",
+    "name": "INVESTOR_ROLE",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MANAGER_ROLE",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "_campaigns",
+    "inputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "outputs": [
+      { "name": "metaUrl", "type": "string", "internalType": "string" },
+      { "name": "goalAmount", "type": "uint256", "internalType": "uint256" },
+      { "name": "totalRaised", "type": "uint256", "internalType": "uint256" },
+      { "name": "founder", "type": "address", "internalType": "address" },
+      { "name": "token", "type": "address", "internalType": "address" },
       {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
+        "name": "milestoneCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "status",
+        "type": "uint8",
+        "internalType": "enum Raise3MileStone.CampaignStatus"
       }
     ],
-    "name": "projectList",
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "_founderProjectByInvestor",
+    "inputs": [
+      { "name": "", "type": "uint256", "internalType": "uint256" },
+      { "name": "", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "_investors",
+    "inputs": [{ "name": "", "type": "address", "internalType": "address" }],
+    "outputs": [
+      { "name": "amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "token", "type": "address", "internalType": "address" },
+      { "name": "investorAdd", "type": "address", "internalType": "address" },
+      {
+        "name": "numberOfCampaign",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "_milestones",
+    "inputs": [
+      { "name": "", "type": "uint256", "internalType": "uint256" },
+      { "name": "", "type": "uint256", "internalType": "uint256" }
+    ],
     "outputs": [
       {
-        "internalType": "uint256",
-        "name": "projectID",
-        "type": "uint256"
+        "name": "milestoneDescription",
+        "type": "string",
+        "internalType": "string"
+      },
+      { "name": "isApproved", "type": "bool", "internalType": "bool" },
+      { "name": "amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "completed", "type": "bool", "internalType": "bool" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "addMilestone",
+    "inputs": [
+      { "name": "_index", "type": "uint256", "internalType": "uint256" },
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" },
+      {
+        "name": "_milestoneDescription",
+        "type": "string",
+        "internalType": "string"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "approveCampaign",
+    "inputs": [
+      {
+        "name": "_campaignIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "approveMilestone",
+    "inputs": [
+      {
+        "name": "_campaignIndex",
+        "type": "uint256",
+        "internalType": "uint256"
       },
       {
-        "internalType": "address",
-        "name": "owner",
-        "type": "address"
+        "name": "_milestoneIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "completeMilestone",
+    "inputs": [
+      { "name": "_index", "type": "uint256", "internalType": "uint256" },
+      { "name": "_milestoneId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "createCampaign",
+    "inputs": [
+      { "name": "_metaUrl", "type": "string", "internalType": "string" },
+      { "name": "_goalAmount", "type": "uint256", "internalType": "uint256" },
+      { "name": "totalRaised", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "flagCampaign",
+    "inputs": [
+      {
+        "name": "_campaignIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "foundInvestorAccount",
+    "inputs": [
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "_token", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "founderCampaign",
+    "inputs": [
+      { "name": "_index", "type": "uint256", "internalType": "uint256" },
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getCampaignDetails",
+    "inputs": [
+      { "name": "_index", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [
+      { "name": "", "type": "string", "internalType": "string" },
+      { "name": "", "type": "uint256", "internalType": "uint256" },
+      { "name": "", "type": "uint256", "internalType": "uint256" },
+      { "name": "", "type": "address", "internalType": "address" },
+      { "name": "", "type": "address", "internalType": "address" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCampaignLen",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getInvestorDetails",
+    "inputs": [
+      { "name": "account", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [
+      { "name": "", "type": "uint256", "internalType": "uint256" },
+      { "name": "", "type": "address", "internalType": "address" },
+      { "name": "", "type": "address", "internalType": "address" },
+      { "name": "", "type": "uint256", "internalType": "uint256" }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getInvetorLen",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleAdmin",
+    "inputs": [
+      { "name": "role", "type": "bytes32", "internalType": "bytes32" }
+    ],
+    "outputs": [{ "name": "", "type": "bytes32", "internalType": "bytes32" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "grantFounderRole",
+    "inputs": [
+      { "name": "_account", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "grantInvestorRole",
+    "inputs": [
+      { "name": "_account", "type": "address", "internalType": "address" },
+      { "name": "_amount", "type": "uint256", "internalType": "uint256" },
+      { "name": "token", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "grantRole",
+    "inputs": [
+      { "name": "role", "type": "bytes32", "internalType": "bytes32" },
+      { "name": "account", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "hasRole",
+    "inputs": [
+      { "name": "role", "type": "bytes32", "internalType": "bytes32" },
+      { "name": "account", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "investorLen",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256", "internalType": "uint256" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "renounceRole",
+    "inputs": [
+      { "name": "role", "type": "bytes32", "internalType": "bytes32" },
+      {
+        "name": "callerConfirmation",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeRole",
+    "inputs": [
+      { "name": "role", "type": "bytes32", "internalType": "bytes32" },
+      { "name": "account", "type": "address", "internalType": "address" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "supportsInterface",
+    "inputs": [
+      { "name": "interfaceId", "type": "bytes4", "internalType": "bytes4" }
+    ],
+    "outputs": [{ "name": "", "type": "bool", "internalType": "bool" }],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "withdrawMilestone",
+    "inputs": [
+      { "name": "_index", "type": "uint256", "internalType": "uint256" },
+      { "name": "_milestoneId", "type": "uint256", "internalType": "uint256" }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "CampaignCreated",
+    "inputs": [
+      {
+        "name": "campaignId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
       },
       {
-        "internalType": "string",
-        "name": "projectName",
-        "type": "string"
+        "name": "metaUrl",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
       },
       {
-        "internalType": "string",
-        "name": "projectDescription",
-        "type": "string"
+        "name": "goalAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "fundraisingGoal",
-        "type": "uint256"
+        "name": "founder",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       },
       {
-        "internalType": "uint256",
-        "name": "totalFundRaised",
-        "type": "uint256"
+        "name": "status",
+        "type": "uint8",
+        "indexed": false,
+        "internalType": "enum Raise3Event.CampaignStatus"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Invested",
+    "inputs": [
+      {
+        "name": "campaignId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
       },
       {
-        "internalType": "uint256",
-        "name": "remainingFund",
-        "type": "uint256"
+        "name": "investor",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       },
       {
-        "internalType": "uint256",
-        "name": "submissionTime",
-        "type": "uint256"
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MilestoneCompleted",
+    "inputs": [
+      {
+        "name": "campaignId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
       },
       {
-        "internalType": "bool",
+        "name": "milestoneId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MilestoneCreated",
+    "inputs": [
+      {
+        "name": "campaignId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "milestoneId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
         "name": "isApproved",
-        "type": "bool"
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
       },
       {
-        "internalType": "bool",
-        "name": "isRejected",
-        "type": "bool"
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       },
       {
-        "internalType": "bool",
-        "name": "isActive",
-        "type": "bool"
-      },
-      {
-        "internalType": "bool",
-        "name": "isAccepted",
-        "type": "bool"
+        "name": "milestoneDescription",
+        "type": "string",
+        "indexed": false,
+        "internalType": "string"
       }
     ],
-    "stateMutability": "view",
-    "type": "function"
+    "anonymous": false
   },
   {
+    "type": "event",
+    "name": "MilestoneWithdrawn",
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
-      }
-    ],
-    "name": "rejectProject",
-    "outputs": [
+        "name": "campaignId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
       {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
+        "name": "milestoneId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "anonymous": false
   },
   {
-    "inputs": [],
-    "name": "renounceOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
+    "type": "event",
+    "name": "RoleAdminChanged",
     "inputs": [
       {
-        "internalType": "string",
-        "name": "_projectName",
-        "type": "string"
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
       },
       {
-        "internalType": "string",
-        "name": "_projectDescription",
-        "type": "string"
+        "name": "previousAdminRole",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
       },
       {
-        "internalType": "uint256",
-        "name": "_fundraisingGoal",
-        "type": "uint256"
-      },
-      {
-        "components": [
-          {
-            "internalType": "string",
-            "name": "milestoneName",
-            "type": "string"
-          },
-          {
-            "internalType": "string",
-            "name": "milestoneDescription",
-            "type": "string"
-          },
-          {
-            "internalType": "uint256",
-            "name": "fundNeeded",
-            "type": "uint256"
-          },
-          {
-            "internalType": "bool",
-            "name": "isComplete",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "voting",
-            "type": "bool"
-          },
-          {
-            "internalType": "bool",
-            "name": "isApproved",
-            "type": "bool"
-          },
-          {
-            "internalType": "uint256",
-            "name": "totalVoters",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "startDate",
-            "type": "uint256"
-          },
-          {
-            "internalType": "uint256",
-            "name": "endDate",
-            "type": "uint256"
-          }
-        ],
-        "internalType": "struct RaiseMilestone.MileStone[]",
-        "name": "_milestones",
-        "type": "tuple[]"
+        "name": "newAdminRole",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
       }
     ],
-    "name": "submitProject",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "anonymous": false
   },
   {
+    "type": "event",
+    "name": "RoleGranted",
     "inputs": [
       {
-        "internalType": "address",
-        "name": "newOwner",
-        "type": "address"
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "sender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
-    "name": "transferOwnership",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
+    "anonymous": false
   },
   {
+    "type": "event",
+    "name": "RoleRevoked",
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_projectID",
-        "type": "uint256"
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
       },
       {
-        "internalType": "uint256",
-        "name": "_milestoneID",
-        "type": "uint256"
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       },
       {
-        "internalType": "bool",
-        "name": "_voteOption",
-        "type": "bool"
+        "name": "sender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
-    "name": "vote",
-    "outputs": [
-      {
-        "internalType": "bool",
-        "name": "",
-        "type": "bool"
-      }
-    ],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  }
+    "anonymous": false
+  },
+  { "type": "error", "name": "AccessControlBadConfirmation", "inputs": [] },
+  {
+    "type": "error",
+    "name": "AccessControlUnauthorizedAccount",
+    "inputs": [
+      { "name": "account", "type": "address", "internalType": "address" },
+      { "name": "neededRole", "type": "bytes32", "internalType": "bytes32" }
+    ]
+  },
+  { "type": "error", "name": "Campaign_AlreadyCompleted", "inputs": [] },
+  { "type": "error", "name": "Campaign_AlreadyFlag", "inputs": [] },
+  { "type": "error", "name": "Campaign_Is_Active", "inputs": [] },
+  { "type": "error", "name": "InsufficientBalance", "inputs": [] },
+  { "type": "error", "name": "InvalidMilestoneIndex", "inputs": [] },
+  { "type": "error", "name": "InvalidToken", "inputs": [] },
+  { "type": "error", "name": "Invalid_CampaignIndex", "inputs": [] },
+  { "type": "error", "name": "MilestoneNotCompleted", "inputs": [] },
+  { "type": "error", "name": "Not_Campaign_Owner", "inputs": [] },
+  { "type": "error", "name": "OnlyFounder", "inputs": [] },
+  { "type": "error", "name": "OnlyInvestor", "inputs": [] },
+  { "type": "error", "name": "ReentrancyGuardReentrantCall", "inputs": [] },
+  { "type": "error", "name": "TransferFailed", "inputs": [] },
+  { "type": "error", "name": "ZeroAddress", "inputs": [] },
+  { "type": "error", "name": "ZeroAmount", "inputs": [] }
 ]

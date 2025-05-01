@@ -6,7 +6,7 @@ import { DashboardContext } from './generalComponents/Dashboard';
 import { useAccount } from 'wagmi';
 
 // Get contract address from environment or the hardcoded fallback in contractInterface.js
-const CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+const CONTRACT_ADDRESS = "0xAED8c5D4926109E87Aeb4D09bBBcbc457dB54E56";
 console.log("ContractInitializer using address:", CONTRACT_ADDRESS);
 
 const ContractInitializer = ({ children }) => {

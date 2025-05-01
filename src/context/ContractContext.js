@@ -1,342 +1,228 @@
+"use client";
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useAccount, useWalletClient, usePublicClient, useChainId } from 'wagmi';
 import { ethers } from 'ethers';
 import * as contractInterface from '../utils/contractInterface';
 
-/*
- * IMPORTANT: Set up your contract address in .env.local file:
- * 
- * NEXT_PUBLIC_CONTRACT_ADDRESS=0x123...your-actual-contract-address
- *
- * The contract address is accessed in src/utils/contractInterface.js
- */
-
+// Create the contract context
 const ContractContext = createContext();
 
-export function useContract() {
-  return useContext(ContractContext);
-}
-
+// Provider component that wraps the app and makes contract available to all child components
 export function ContractProvider({ children }) {
-  const [provider, setProvider] = useState(null);
-  const [signer, setSigner] = useState(null);
-  const [account, setAccount] = useState(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [chainId, setChainId] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [networkName, setNetworkName] = useState('unknown');
+  const { address, isConnected } = useAccount();
+  const publicClient = usePublicClient();
+  const { data: walletClient } = useWalletClient();
+  const chainId = useChainId(); // Get current chain ID
 
-  // Helper function to get network name from chainId
-  const getNetworkName = (chainId) => {
-    if (!chainId) return 'unknown';
-    
-    // Convert chainId to number if it's a hex string
-    const chainIdNum = typeof chainId === 'string' && chainId.startsWith('0x') 
-      ? parseInt(chainId, 16) 
-      : Number(chainId);
-    
-    const networks = {
-      1: 'mainnet',
-      3: 'ropsten',
-      4: 'rinkeby',
-      5: 'goerli',
-      11155111: 'sepolia',
-      42: 'kovan',
-      56: 'bsc',
-      97: 'bsc-testnet',
-      137: 'polygon',
-      80001: 'polygon-mumbai',
-      42161: 'arbitrum',
-      421611: 'arbitrum-rinkeby',
-      10: 'optimism',
-      69: 'optimism-kovan',
-      31337: 'hardhat',
-      1337: 'localhost',
-    };
-    
-    return networks[chainIdNum] || `unknown-${chainIdNum}`;
-  };
+  const [campaignsCount, setCampaignsCount] = useState(0);
+  const [loadingCount, setLoadingCount] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Connect to wallet
-  const connectWallet = useCallback(async () => {
+  // Custom signer creation based on wagmi wallet client
+  const getSigner = useCallback(async () => {
     try {
-      setLoading(true);
-      if (window.ethereum) {
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        
-        // Get chain ID first
-        const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-        const chainIdNum = parseInt(chainIdHex, 16);
-        setChainId(chainIdNum);
-        
-        // Set the network name
-        const networkNameValue = getNetworkName(chainIdNum);
-        setNetworkName(networkNameValue);
-        console.log(`Connected to network: ${networkNameValue} (chainId: ${chainIdNum})`);
-        
-        // Create provider with fallback for unknown networks
-        let provider;
-        try {
-          provider = new ethers.providers.Web3Provider(window.ethereum);
-        } catch (error) {
-          console.warn('Error creating Web3Provider:', error);
-          // Fallback for unknown networks - create with a dummy network
-          provider = new ethers.providers.Web3Provider(
-            window.ethereum,
-            {
-              name: networkNameValue,
-              chainId: chainIdNum
-            }
-          );
-        }
-        
-        const signer = provider.getSigner();
-        
-        setProvider(provider);
-        setSigner(signer);
-        setAccount(accounts[0]);
-        setIsConnected(true);
-        
-        console.log('Wallet connected successfully with account:', accounts[0]);
-      } else {
-        alert('Please install MetaMask to use this application');
+      if (!isConnected || !walletClient || !address) {
+        console.error("Wallet not connected, missing required data:", {
+          isConnected,
+          hasWalletClient: !!walletClient,
+          hasAddress: !!address
+        });
+        throw new Error("Wallet not connected");
       }
+
+      // Create a custom ethers signer from walletClient
+      const customSigner = {
+        _address: address,
+        provider: null,
+        getAddress: () => Promise.resolve(address),
+        signMessage: (message) => walletClient.signMessage({ message }),
+        signTransaction: (tx) => walletClient.signTransaction(tx),
+        sendTransaction: (tx) => {
+          const { to, data, value } = tx;
+          return walletClient.sendTransaction({
+            to,
+            data,
+            value,
+            account: address,
+            chain: undefined, // Let wallet use current chain instead of specifying
+          });
+        },
+        // Add other methods as needed
+        connect: () => customSigner,
+      };
+
+      console.log("Created custom signer for address:", address, "on chain ID:", chainId);
+      return customSigner;
     } catch (error) {
-      console.error('Error connecting to wallet:', error);
-    } finally {
-      setLoading(false);
+      console.error("Error creating signer:", error);
+      throw new Error("Failed to create signer: " + error.message);
     }
-  }, []);
+  }, [walletClient, isConnected, address, chainId]);
 
-  // Disconnect wallet
-  const disconnectWallet = useCallback(() => {
-    setProvider(null);
-    setSigner(null);
-    setAccount(null);
-    setIsConnected(false);
-    setChainId(null);
-    setNetworkName('unknown');
-  }, []);
+  // Create a readonly provider from public client for read operations
+  const getProvider = useCallback(() => {
+    if (!publicClient) return null;
 
-  // Auto-connect when ethereum is available and wallet is connected via Wagmi
+    // We don't need to create a full ethers provider for read operations
+    // Instead, we can just use the public client directly wrapped in a minimal interface
+    return {
+      call: (tx) => publicClient.call(tx),
+      getBalance: (address) => publicClient.getBalance({ address }),
+      getBlockNumber: () => publicClient.getBlockNumber(),
+      getCode: (address) => publicClient.getCode({ address }),
+      getStorageAt: (address, position) =>
+        publicClient.getStorageAt({ address, slot: position }),
+      // Add other methods as needed for your contract reads
+    };
+  }, [publicClient]);
+
+  // Fetch campaign count
   useEffect(() => {
-    const autoConnect = async () => {
-      if (window.ethereum) {
-        try {
-          // Check if we already have permission to access accounts
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          
-          if (accounts && accounts.length > 0) {
-            console.log('Auto-connecting to wallet with account:', accounts[0]);
-            
-            try {
-              // Get chain ID first
-              const chainIdHex = await window.ethereum.request({ method: 'eth_chainId' });
-              const chainIdNum = parseInt(chainIdHex, 16);
-              setChainId(chainIdNum);
-              
-              // Set the network name
-              const networkNameValue = getNetworkName(chainIdNum);
-              setNetworkName(networkNameValue);
-              console.log(`Connected to network: ${networkNameValue} (chainId: ${chainIdNum})`);
-              
-              // Create provider with fallback for unknown networks
-              let provider;
-              try {
-                provider = new ethers.providers.Web3Provider(window.ethereum);
-              } catch (error) {
-                console.warn('Error creating Web3Provider:', error);
-                // Fallback for unknown networks - create with a dummy network
-                provider = new ethers.providers.Web3Provider(
-                  window.ethereum,
-                  {
-                    name: networkNameValue,
-                    chainId: chainIdNum
-                  }
-                );
-              }
-              
-              const signer = provider.getSigner();
-              
-              setProvider(provider);
-              setSigner(signer);
-              setAccount(accounts[0]);
-              setIsConnected(true);
-              
-              // Verification log to confirm we're connected
-              console.log('Contract context connected successfully');
-            } catch (providerError) {
-              console.error('Error setting up provider or signer:', providerError);
-              // Even if provider setup fails, we still have accounts connected
-              setAccount(accounts[0]);
-              setIsConnected(true);
-            }
-          } else {
-            console.log('No connected accounts found during auto-connect');
-          }
-        } catch (error) {
-          console.error('Error during auto-connect wallet process:', error);
-        }
-      } else {
-        console.log('No ethereum object found - browser may not have wallet extension');
+    const fetchCampaignCount = async () => {
+      const provider = getProvider();
+      if (!provider) return;
+
+      try {
+        setLoadingCount(true);
+        setError(null);
+
+        // Use getCampaignsCount without chainId parameter
+        const count = await contractInterface.getCampaignsCount(provider);
+        setCampaignsCount(count);
+      } catch (error) {
+        console.error("Failed to fetch campaign count:", error);
+        setError("Failed to load campaign count");
+      } finally {
+        setLoadingCount(false);
       }
     };
 
-    autoConnect();
-    
-    // Set up periodic check to ensure connection stays valid
-    const checkConnectionInterval = setInterval(() => {
-      if (window.ethereum && !isConnected) {
-        console.log('Performing periodic connection check');
-        autoConnect();
-      }
-    }, 10000); // Check every 10 seconds if we're not connected
-    
-    return () => {
-      clearInterval(checkConnectionInterval);
-    };
-  }, [isConnected]);
+    if (isConnected) {
+      fetchCampaignCount();
+    }
+  }, [getProvider, isConnected]);
 
-  // Listen for account changes
-  useEffect(() => {
-    if (window.ethereum) {
-      window.ethereum.on('accountsChanged', (accounts) => {
-        if (accounts.length > 0) {
-          setAccount(accounts[0]);
-          setIsConnected(true);
-          
-          // Update signer when account changes
-          const provider = new ethers.providers.Web3Provider(window.ethereum);
-          setProvider(provider);
-          setSigner(provider.getSigner());
-        } else {
-          disconnectWallet();
-        }
+  // Submit project function
+  const submitProject = useCallback(async (name, description, goalAmount, milestones = []) => {
+    try {
+      console.log("Submit Project called with:", { name, description });
+      console.log("Current chain ID:", chainId);
+
+      if (!isConnected) {
+        throw new Error("Wallet not connected");
+      }
+
+      console.log("Getting signer...");
+      const signer = await getSigner();
+      console.log("Signer obtained for address:", signer._address);
+
+      // Create metadata
+      const metaUrl = JSON.stringify({
+        name,
+        description,
+        milestones: milestones.map(m => ({
+          name: m.milestoneName,
+          description: m.milestoneDescription,
+          amount: m.fundNeeded.toString()
+        }))
       });
 
-      window.ethereum.on('chainChanged', async (chainIdHex) => {
-        const chainIdNum = parseInt(chainIdHex, 16);
-        setChainId(chainIdNum);
-        
-        // Update network name
-        const networkNameValue = getNetworkName(chainIdNum);
-        setNetworkName(networkNameValue);
-        console.log(`Network changed: ${networkNameValue} (chainId: ${chainIdNum})`);
-        
-        // Reconnect to wallet on chain change
-        try {
-          const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-          if (accounts && accounts.length > 0) {
-            // Create provider with fallback for unknown networks
-            let provider;
-            try {
-              provider = new ethers.providers.Web3Provider(window.ethereum);
-            } catch (error) {
-              console.warn('Error creating Web3Provider after chain change:', error);
-              // Fallback for unknown networks - create with a dummy network
-              provider = new ethers.providers.Web3Provider(
-                window.ethereum,
-                {
-                  name: networkNameValue,
-                  chainId: chainIdNum
-                }
-              );
-            }
-            
-            const signer = provider.getSigner();
-            setProvider(provider);
-            setSigner(signer);
-          }
-        } catch (error) {
-          console.error('Error reconnecting after chain change:', error);
+      console.log("Creating project with metadata:", metaUrl.substring(0, 100) + "...");
+
+      // Use CONTRACT_ADDRESS directly
+      const tx = {
+        to: contractInterface.CONTRACT_ADDRESS,
+        data: contractInterface.getCreateCampaignData(metaUrl, goalAmount, 0),
+        value: 0,
+        // Don't specify chainId, let the wallet use current chain
+      };
+
+      console.log("Sending transaction to contract address:", contractInterface.CONTRACT_ADDRESS);
+      const txHash = await signer.sendTransaction(tx);
+      console.log("Transaction sent with hash:", txHash);
+
+      // Return a transaction receipt-like object
+      return {
+        hash: txHash,
+        wait: async (confirmations = 1) => {
+          console.log(`Waiting for ${confirmations} confirmations`);
+          // In a real implementation, you would wait for confirmations
+          return { blockNumber: "pending" };
         }
-      });
-    }
-
-    return () => {
-      if (window.ethereum) {
-        window.ethereum.removeAllListeners('accountsChanged');
-        window.ethereum.removeAllListeners('chainChanged');
-      }
-    };
-  }, [disconnectWallet]);
-
-  // Contract functions wrapped with the current signer/provider
-  const getProjectsCount = useCallback(async () => {
-    if (!provider) return 0;
-    try {
-      return await contractInterface.getProjectsCount(provider);
+      };
     } catch (error) {
-      console.warn("getProjectsCount failed, returning 0:", error.message);
-      return 0;
+      console.error("Submit project error:", error);
+      throw error;
     }
-  }, [provider]);
+  }, [getSigner, isConnected, chainId]);
 
-  const getProject = useCallback(async (projectId) => {
-    if (!provider) return null;
-    return contractInterface.getProject(provider, projectId);
-  }, [provider]);
+  // Create a new campaign
+  const createCampaign = useCallback(async (metaUrl, goalAmount, initialRaised = 0) => {
+    try {
+      const signer = await getSigner();
+      return contractInterface.createCampaign(signer, metaUrl, goalAmount, initialRaised);
+    } catch (error) {
+      console.error("Create campaign error:", error);
+      throw error;
+    }
+  }, [getSigner]);
 
-  const submitProject = useCallback(async (name, description, goal, milestones) => {
-    if (!signer) throw new Error('Wallet not connected');
-    return contractInterface.submitProject(signer, name, description, goal, milestones);
-  }, [signer]);
+  // Add a milestone to an existing campaign
+  const addMilestone = useCallback(async (campaignIndex, amount, description) => {
+    try {
+      const signer = await getSigner();
+      return contractInterface.addMilestone(signer, campaignIndex, amount, description);
+    } catch (error) {
+      console.error("Add milestone error:", error);
+      throw error;
+    }
+  }, [getSigner]);
 
-  const donateToProject = useCallback(async (projectId, amount) => {
-    if (!signer) throw new Error('Wallet not connected');
-    return contractInterface.donateToProject(signer, projectId, amount);
-  }, [signer]);
+  // Get campaign details
+  const getCampaignDetails = useCallback(async (campaignId) => {
+    if (!publicClient) {
+      throw new Error("Provider not available");
+    }
+    const provider = getProvider();
+    return contractInterface.getCampaignDetails(provider, campaignId);
+  }, [getProvider, publicClient]);
 
-  const voteOnMilestone = useCallback(async (projectId, milestoneId, voteOption) => {
-    if (!signer) throw new Error('Wallet not connected');
-    return contractInterface.voteOnMilestone(signer, projectId, milestoneId, voteOption);
-  }, [signer]);
+  // Get milestone details
+  const getMilestoneDetails = useCallback(async (campaignId, milestoneId) => {
+    if (!publicClient) {
+      throw new Error("Provider not available");
+    }
+    const provider = getProvider();
+    return contractInterface.getMilestoneDetails(provider, campaignId, milestoneId);
+  }, [getProvider, publicClient]);
 
-  const createVoting = useCallback(async (projectId, milestoneId) => {
-    if (!signer) throw new Error('Wallet not connected');
-    return contractInterface.createVoting(signer, projectId, milestoneId);
-  }, [signer]);
+  // Get investor details
+  const getInvestorDetails = useCallback(async (investorAddress) => {
+    if (!publicClient) {
+      throw new Error("Provider not available");
+    }
+    const provider = getProvider();
+    return contractInterface.getInvestorDetails(provider, investorAddress || address);
+  }, [getProvider, publicClient, address]);
 
-  // Admin functions
-  const approveProject = useCallback(async (projectId) => {
-    if (!signer) throw new Error('Wallet not connected');
-    return contractInterface.approveProject(signer, projectId);
-  }, [signer]);
+  // Add other contract functions...
 
-  const rejectProject = useCallback(async (projectId) => {
-    if (!signer) throw new Error('Wallet not connected');
-    return contractInterface.rejectProject(signer, projectId);
-  }, [signer]);
-
-  const activateProject = useCallback(async (projectId) => {
-    if (!signer) throw new Error('Wallet not connected');
-    return contractInterface.activateProject(signer, projectId);
-  }, [signer]);
-
-  const acceptProject = useCallback(async (projectId) => {
-    if (!signer) throw new Error('Wallet not connected');
-    return contractInterface.acceptProject(signer, projectId);
-  }, [signer]);
-
+  // Context value with all contract functions
   const value = {
-    provider,
-    signer,
-    account,
     isConnected,
+    campaignsCount,
+    loadingCount,
+    error,
     chainId,
-    networkName,
-    loading,
-    connectWallet,
-    disconnectWallet,
-    getProjectsCount,
-    getProject,
     submitProject,
-    donateToProject,
-    voteOnMilestone,
-    createVoting,
-    approveProject,
-    rejectProject,
-    activateProject,
-    acceptProject
+    createCampaign,
+    addMilestone,
+    getCampaignDetails,
+    getMilestoneDetails,
+    getInvestorDetails,
+    // Include all other functions here
+    // ...
   };
 
   return (
@@ -346,4 +232,11 @@ export function ContractProvider({ children }) {
   );
 }
 
-export default ContractProvider; 
+// Hook to use the contract context in components
+export function useContract() {
+  const context = useContext(ContractContext);
+  if (!context) {
+    throw new Error("useContract must be used within a ContractProvider");
+  }
+  return context;
+}

@@ -34,18 +34,23 @@ export const useTransactionNotification = () => {
   };
 };
 
+// TransactionNotification component
 const TransactionNotification = ({ notifications, removeNotification }) => {
   useEffect(() => {
     // Set up timers to automatically dismiss notifications
-    notifications.forEach(notification => {
+    const timers = notifications.map(notification => {
       if (notification.duration) {
-        const timer = setTimeout(() => {
+        return setTimeout(() => {
           removeNotification(notification.id);
         }, notification.duration);
-        
-        return () => clearTimeout(timer);
       }
-    });
+      return null;
+    }).filter(Boolean);
+    
+    // Clear all timers on unmount or when notifications change
+    return () => {
+      timers.forEach(timer => clearTimeout(timer));
+    };
   }, [notifications, removeNotification]);
 
   if (notifications.length === 0) return null;
@@ -58,12 +63,16 @@ const TransactionNotification = ({ notifications, removeNotification }) => {
           className={`max-w-sm p-4 rounded-lg shadow-lg flex items-start gap-3 ${
             notification.type === 'success' 
               ? 'bg-green-900/90 border border-green-700' 
-              : 'bg-red-900/90 border border-red-700'
+              : notification.type === 'info'
+                ? 'bg-blue-900/90 border border-blue-700'
+                : 'bg-red-900/90 border border-red-700'
           }`}
         >
           <div className="shrink-0">
             {notification.type === 'success' ? (
               <CheckCircle className="text-green-500" size={20} />
+            ) : notification.type === 'info' ? (
+              <AlertCircle className="text-blue-500" size={20} />
             ) : (
               <AlertCircle className="text-red-500" size={20} />
             )}
@@ -83,4 +92,4 @@ const TransactionNotification = ({ notifications, removeNotification }) => {
   );
 };
 
-export default TransactionNotification; 
+export default TransactionNotification;
