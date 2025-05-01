@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { ThemeProvider } from 'next-themes';
 import { createConfig, http, WagmiProvider } from 'wagmi';
-import { mainnet, sepolia } from 'wagmi/chains';
+import { mainnet, sepolia, liskSepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { injected, walletConnect } from '@wagmi/connectors';
 import { cookieStorage, createStorage } from '@wagmi/core';
@@ -20,10 +20,11 @@ const storage = createStorage({
 
 // Create wagmi config with better disconnection handling
 const config = createConfig({
-  chains: [mainnet, sepolia],
+  chains: [mainnet, sepolia, liskSepolia],
   transports: {
     [mainnet.id]: http(),
     [sepolia.id]: http(),
+[liskSepolia.id]: http("https://rpc.sepolia-api.lisk.com"),
   },
   connectors: [
     injected({
