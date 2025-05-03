@@ -97,16 +97,16 @@ const ProjectActions = () => {
       }
 
       // Format milestones for the contract (convert to blockchain format)
-      const formattedMilestones = formData.milestones.map((m) => ({
+      const formattedMilestones = formData.milestones.map(m => ({
         milestoneName: m.name,
         milestoneDescription: m.description,
-        fundNeeded: ethers.parseEther(m.fundNeeded.toString()), // Updated to ethers v6 syntax
+        fundNeeded: ethers.utils.parseEther(m.fundNeeded.toString()), // Use ethers.utils for v5 compatibility
         isComplete: false,
         voting: false,
         isApproved: false,
         totalVoters: 0,
         startDate: 0,
-        endDate: 0,
+        endDate: 0
       }));
 
       // Log transaction details
@@ -126,7 +126,7 @@ const ProjectActions = () => {
         const tx = await submitProject(
           formData.name,
           formData.description,
-          ethers.parseEther(formData.goal.toString()), // Updated to ethers v6 syntax
+          ethers.utils.parseEther(formData.goal.toString()), // Using ethers.utils for v5 compatibility
           formattedMilestones
         );
 
