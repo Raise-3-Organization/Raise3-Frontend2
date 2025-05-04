@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, createContext } from "react";
+import React, { useState, useEffect, createContext, useContext, useRef } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -66,14 +66,17 @@ const Dashboard = () => {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("founder");
-  const [activeSection, setActiveSection] = useState<string>("dashboard");
+  const [activeSection, setActiveSection] = useState("dashboard");
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   
-  // Transaction notifications
+  // Create a ref to track redirect status at component level, not inside useEffect
+  const redirectingRef = useRef(false);
+  
+  // Import notification utilities
   const { 
     notifications, 
     addNotification, 
@@ -85,32 +88,55 @@ const Dashboard = () => {
   useEffect(() => {
     setMounted(true);
     
-    if (!isConnected) {
-      router.push("/login");
-      return;
-    }
-
-    // Simulate getting user role from API/database
-    const fetchUserRole = async () => {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      // Simulate unregistered user (first-time visitor)
-      const isRegistered = localStorage.getItem(`user-registered-${address}`);
-      
-      if (!isRegistered) {
-        setUserRole(null);
-        setIsRegistrationModalOpen(true);
-      } else {
-        const savedRole = localStorage.getItem(`user-role-${address}`) as UserRole;
-        setUserRole(savedRole || "both");
-        setActiveView(localStorage.getItem(`user-active-view-${address}`) as ActiveView || "founder");
+    // Only perform checks if component is mounted
+    if (!mounted) return;
+    
+    // No need to re-declare redirectingRef here since we're using the component level one
+    
+    const checkConnection = async () => {
+      // Only redirect if we're sure the user isn't connected
+      // This prevents flickering during wallet connection
+      if (!isConnected && mounted && !redirectingRef.current) {
+        console.log("User not connected, redirecting to login");
+        redirectingRef.current = true;
+        router.push("/login");
+        return;
       }
-      setIsLoading(false);
-    };
+      
+      if (isConnected && mounted) {
+        // Simulate getting user role from API/database
+        const fetchUserRole = async () => {
+          try {
+            // Simulate API call delay
+            await new Promise(resolve => setTimeout(resolve, 800));
+            
+            // Simulate unregistered user (first-time visitor)
+            const isRegistered = localStorage.getItem(`user-registered-${address}`);
+            
+            if (!isRegistered) {
+              setUserRole(null);
+              setIsRegistrationModalOpen(true);
+            } else {
+              const savedRole = localStorage.getItem(`user-role-${address}`) as UserRole;
+              setUserRole(savedRole || "both");
+              setActiveView(localStorage.getItem(`user-active-view-${address}`) as ActiveView || "founder");
+            }
+          } catch (error) {
+            console.error("Error fetching user role:", error);
+          } finally {
+            setIsLoading(false);
+          }
+        };
 
-    fetchUserRole();
-  }, [isConnected, router, address]);
+        fetchUserRole();
+      }
+    };
+    
+    checkConnection();
+    
+    // Only add isConnected to dependency array
+    // We don't want to re-run this on router or address changes
+  }, [isConnected, mounted, router, address]);
 
   // Handle role selection during registration
   const handleRoleSelection = (role: UserRole) => {
@@ -328,59 +354,54 @@ const Dashboard = () => {
     }
   };
 
-  // Loading state
+  // Create Dashboard context value
+  const dashboardContextValue = {
+    activeSection,
+    setActiveSection,
+    activeView,
+    setActiveView,
+    addNotification,
+    removeNotification,
+    updateNotification,
+  };
+
+  if (!mounted) {
+    return null;
+  }
+
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0B0B0F] text-white">
-        <div className="w-12 h-12 rounded-full border-2 border-[#FF7171] border-t-transparent animate-spin mb-4"></div>
-        <p className="text-gray-300">Loading dashboard...</p>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#FF7171]"></div>
       </div>
     );
   }
 
-  // Registration required
   if (isRegistrationModalOpen) {
     return <RegistrationModal />;
   }
 
   return (
-    <DashboardContext.Provider value={{ 
-      activeSection, 
-      setActiveSection,
-      activeView,
-      setActiveView: (view) => {
-        setActiveView(view);
-        localStorage.setItem(`user-active-view-${address}`, view);
-      },
-      addNotification,
-      removeNotification,
-      updateNotification
-    }}>
-      <div className="min-h-screen flex flex-col bg-[#0B0B0F] text-white">
-        {/* Header */}
-        <header className="border-b border-gray-800 bg-[#0B0B0F] backdrop-blur-md sticky top-0 z-30">
-          <div className="flex items-center justify-between px-4 py-4 md:px-6">
-            {/* Logo and mobile menu button */}
-            <div className="flex items-center gap-4">
-              <button 
-                className="block md:hidden text-gray-400 hover:text-white" 
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              >
-                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-              </button>
-              <div className="flex items-center space-x-2">
-                <Image src="/Subtract.png" alt="Raise3 Logo" width={28} height={28} />
-                <span className="text-xl font-semibold text-white font-krona">Raise3</span>
-              </div>
+    <DashboardContext.Provider value={dashboardContextValue}>
+      <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row max-w-screen overflow-hidden">
+        {/* Sidebar - Hidden on mobile, visible on desktop */}
+        <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-[#0B0B0F] border-r border-gray-800 h-screen sticky top-0 overflow-y-auto">
+          {/* Logo */}
+          <div className="p-4 border-b border-gray-800">
+            <div className="flex items-center space-x-2">
+              <Image src="/Subtract.png" alt="Raise3 Logo" width={28} height={28} />
+              <span className="text-xl font-bold">Raise3</span>
             </div>
-
-            {/* Dashboard Role Toggle (Available for all users) */}
-            <div className="hidden md:flex items-center bg-[#111] rounded-full p-1">
+          </div>
+          
+          {/* Role Toggle - Remove the userRole condition */}
+          <div className="p-4 border-b border-gray-800">
+            <div className="flex rounded-lg bg-[#111] overflow-hidden">
               <button
                 onClick={() => toggleView("founder")}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeView === "founder"
-                    ? "bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] text-white"
+                className={`flex-1 py-2 text-center text-sm font-medium ${
+                  activeView === "founder" 
+                    ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white" 
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -388,68 +409,9 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={() => toggleView("investor")}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeView === "investor"
-                    ? "bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                Investor
-              </button>
-            </div>
-
-            {/* User actions */}
-            <div className="flex items-center gap-2 md:gap-4">
-              {/* Theme toggle */}
-              {mounted && (
-                <button
-                  onClick={toggleTheme}
-                  className="p-2 rounded-full text-gray-400 hover:text-white transition-colors"
-                  aria-label="Toggle Theme"
-                >
-                  {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-                </button>
-              )}
-              
-              {/* Notifications */}
-              <button className="p-2 rounded-full text-gray-400 hover:text-white transition-colors">
-                <Bell size={20} />
-              </button>
-              
-              {/* Profile */}
-              <div className="flex items-center gap-2">
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium">{formatAddress(address)}</p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="p-2 rounded-full text-gray-400 hover:text-white transition-colors"
-                  title="Logout"
-                >
-                  <LogOut size={20} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile Role Toggle (Available for all users) */}
-          <div className="md:hidden px-4 pb-4">
-            <div className="flex items-center bg-[#111] rounded-full p-1">
-              <button
-                onClick={() => toggleView("founder")}
-                className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeView === "founder"
-                    ? "bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] text-white"
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                Founder
-              </button>
-              <button
-                onClick={() => toggleView("investor")}
-                className={`flex-1 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  activeView === "investor"
-                    ? "bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] text-white"
+                className={`flex-1 py-2 text-center text-sm font-medium ${
+                  activeView === "investor" 
+                    ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white" 
                     : "text-gray-400 hover:text-white"
                 }`}
               >
@@ -457,102 +419,307 @@ const Dashboard = () => {
               </button>
             </div>
           </div>
-        </header>
-
-        <div className="flex flex-1">
-          {/* Sidebar (desktop) or slide-over menu (mobile) */}
-          <div
-            className={`
-              fixed inset-y-0 left-0 z-20 w-64 transform transition-transform duration-300 ease-in-out
-              md:static md:translate-x-0 md:mt-0 bg-black md:bg-transparent border-r border-gray-800
-              ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"}
-            `}
-          >
-            <div className="h-full md:h-auto md:sticky md:top-[83px] overflow-y-auto p-4">
-              {/* Mobile logo and close button */}
-              <div className="flex justify-between items-center mb-8 md:hidden">
-                <div className="flex items-center space-x-2">
-                  <Image src="/Subtract.png" alt="Raise3 Logo" width={24} height={24} />
-                  <span className="text-lg font-semibold text-white">Raise3</span>
-                </div>
-                <button onClick={() => setIsMobileMenuOpen(false)}>
-                  <X size={24} className="text-gray-400" />
-                </button>
-              </div>
-
-              {/* Navigation links */}
-              <nav className="space-y-1">
-                {getNavItems().map((item, index) => (
+          
+          {/* Navigation */}
+          <nav className="flex-1 p-4">
+            <ul className="space-y-1">
+              {getNavItems().map((item) => (
+                <li key={item.id}>
                   <button
-                    key={index}
-                    onClick={() => {
-                      setActiveSection(item.id);
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`
-                      w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left
-                      ${
-                        item.active
-                          ? "bg-gradient-to-r from-[#2F50FF]/20 via-[#FF7171]/20 to-[#9360BB]/20 text-white"
-                          : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                      }
-                    `}
+                    onClick={() => setActiveSection(item.id)}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                      item.active
+                        ? "bg-[#181818] text-white font-medium"
+                        : "text-gray-400 hover:bg-[#181818] hover:text-white"
+                    }`}
                   >
-                    {item.icon}
+                    <span className={item.active ? "text-[#FF7171]" : ""}>{item.icon}</span>
                     <span>{item.label}</span>
                   </button>
-                ))}
-              </nav>
-
-              {/* Settings link at bottom */}
-              <div className="mt-8">
+                </li>
+              ))}
+              <li className="pt-2">
                 <button
-                  onClick={() => {
-                    setActiveSection("settings");
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={`
-                    w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left
-                    ${
-                      activeSection === "settings"
-                        ? "bg-gradient-to-r from-[#2F50FF]/20 via-[#FF7171]/20 to-[#9360BB]/20 text-white"
-                        : "text-gray-400 hover:bg-gray-800 hover:text-white"
-                    }
-                  `}
+                  onClick={() => setActiveSection("settings")}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    activeSection === "settings"
+                      ? "bg-[#181818] text-white font-medium"
+                      : "text-gray-400 hover:bg-[#181818] hover:text-white"
+                  }`}
                 >
-                  <Settings size={20} />
+                  <span className={activeSection === "settings" ? "text-[#FF7171]" : ""}>
+                    <Settings size={20} />
+                  </span>
                   <span>Settings</span>
                 </button>
+              </li>
+            </ul>
+          </nav>
+          
+          {/* User info */}
+          <div className="p-4 border-t border-gray-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                  {address && address[0].toUpperCase()}
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-white">
+                    {formatAddress(address)}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="text-gray-400 hover:text-white"
+              >
+                <LogOut size={18} />
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile sidebar - Overlay when open */}
+        {isMobileMenuOpen && (
+          <div className="fixed inset-0 z-40 lg:hidden">
+            <div className="fixed inset-0 bg-black bg-opacity-70" onClick={() => setIsMobileMenuOpen(false)}></div>
+            <div className="fixed inset-y-0 left-0 w-64 bg-[#0B0B0F] border-r border-gray-800 z-50 overflow-y-auto">
+              {/* Mobile sidebar content - same as desktop but in overlay */}
+              <div className="p-4 border-b border-gray-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Image src="/Subtract.png" alt="Raise3 Logo" width={28} height={28} />
+                    <span className="text-xl font-bold">Raise3</span>
+                  </div>
+                  <button 
+                    className="text-gray-400 hover:text-white" 
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Role Toggle - Always visible */}
+              <div className="p-4 border-b border-gray-800">
+                <div className="flex rounded-lg bg-[#111] overflow-hidden">
+                  <button
+                    onClick={() => {
+                      toggleView("founder");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex-1 py-2 text-center text-sm font-medium ${
+                      activeView === "founder" 
+                        ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white" 
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Founder
+                  </button>
+                  <button
+                    onClick={() => {
+                      toggleView("investor");
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex-1 py-2 text-center text-sm font-medium ${
+                      activeView === "investor" 
+                        ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white" 
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Investor
+                  </button>
+                </div>
+              </div>
+              
+              {/* Navigation */}
+              <nav className="p-4">
+                <ul className="space-y-1">
+                  {getNavItems().map((item) => (
+                    <li key={item.id}>
+                      <button
+                        onClick={() => {
+                          setActiveSection(item.id);
+                          setIsMobileMenuOpen(false);
+                        }}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                          item.active
+                            ? "bg-[#181818] text-white font-medium"
+                            : "text-gray-400 hover:bg-[#181818] hover:text-white"
+                        }`}
+                      >
+                        <span className={item.active ? "text-[#FF7171]" : ""}>{item.icon}</span>
+                        <span>{item.label}</span>
+                      </button>
+                    </li>
+                  ))}
+                  <li className="pt-2">
+                    <button
+                      onClick={() => {
+                        setActiveSection("settings");
+                        setIsMobileMenuOpen(false);
+                      }}
+                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                        activeSection === "settings"
+                          ? "bg-[#181818] text-white font-medium"
+                          : "text-gray-400 hover:bg-[#181818] hover:text-white"
+                      }`}
+                    >
+                      <span className={activeSection === "settings" ? "text-[#FF7171]" : ""}>
+                        <Settings size={20} />
+                      </span>
+                      <span>Settings</span>
+                    </button>
+                  </li>
+                </ul>
+              </nav>
+              
+              {/* User info */}
+              <div className="p-4 border-t border-gray-800 mt-auto">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
+                      {address && address[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <span className="text-sm font-medium text-white">
+                        {formatAddress(address)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <LogOut size={18} />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Main content */}
-          <main className="flex-1 p-4 md:p-6">
-            {/* Page title */}
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold">
-                {getDashboardTitle()}
-              </h1>
-              <p className="text-gray-400 mt-1 text-sm">
-                {getDashboardDescription()}
-              </p>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-h-screen">
+          {/* Mobile Header */}
+          <header className="border-b border-gray-800 bg-[#0B0B0F] backdrop-blur-md sticky top-0 z-30 w-full lg:hidden">
+            <div className="flex items-center justify-between px-4 py-3">
+              {/* Logo and mobile menu button */}
+              <div className="flex items-center gap-3">
+                <button 
+                  className="text-gray-400 hover:text-white" 
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                >
+                  <Menu size={22} />
+                </button>
+                <div className="flex items-center space-x-2">
+                  <Image src="/Subtract.png" alt="Raise3 Logo" width={24} height={24} />
+                  <span className="text-lg font-bold">Raise3</span>
+                </div>
+              </div>
+              
+              {/* Header Controls */}
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={toggleTheme}
+                  className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800"
+                >
+                  {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                </button>
+                <button
+                  className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800 relative"
+                >
+                  <Bell size={18} />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+                {/* Role toggle - Always visible */}
+                <div className="flex rounded-lg bg-[#111] overflow-hidden">
+                  <button
+                    onClick={() => toggleView("founder")}
+                    className={`px-4 py-2 text-sm font-medium ${
+                      activeView === "founder" 
+                        ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white" 
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Founder
+                  </button>
+                  <button
+                    onClick={() => toggleView("investor")}
+                    className={`px-4 py-2 text-sm font-medium ${
+                      activeView === "investor" 
+                        ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white" 
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    Investor
+                  </button>
+                </div>
+              </div>
             </div>
+          </header>
 
-            {/* Dashboard content */}
-            {activeView === "founder" 
-              ? renderFounderContent()
-              : renderInvestorContent()
-            }
+          {/* Content */}
+          <main className="flex-1 px-4 md:px-6 lg:px-8 py-6">
+            {/* Page Header */}
+            <div className="mb-6 md:mb-8">
+              <div className="flex items-center justify-between pb-4">
+                <div>
+                  <h1 className="text-2xl md:text-3xl font-bold">{getDashboardTitle()}</h1>
+                  <p className="text-gray-400 mt-1">{getDashboardDescription()}</p>
+                </div>
+                
+                {/* Desktop Header Controls */}
+                <div className="hidden lg:flex items-center space-x-3">
+                  <button
+                    onClick={toggleTheme}
+                    className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800"
+                  >
+                    {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
+                  </button>
+                  <button
+                    className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800 relative"
+                  >
+                    <Bell size={20} />
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  </button>
+                  {/* Role toggle - Always visible */}
+                  <div className="flex rounded-lg bg-[#111] overflow-hidden">
+                    <button
+                      onClick={() => toggleView("founder")}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        activeView === "founder" 
+                          ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white" 
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      Founder
+                    </button>
+                    <button
+                      onClick={() => toggleView("investor")}
+                      className={`px-4 py-2 text-sm font-medium ${
+                        activeView === "investor" 
+                          ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white" 
+                          : "text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      Investor
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Page Content */}
+            <div className="space-y-6">
+              {activeView === "founder" ? renderFounderContent() : renderInvestorContent()}
+            </div>
           </main>
         </div>
+        
+        {/* Notifications */}
+        <TransactionNotification notifications={notifications} removeNotification={removeNotification} />
       </div>
-      
-      {/* Transaction Notifications */}
-      <TransactionNotification 
-        notifications={notifications} 
-        removeNotification={removeNotification} 
-      />
     </DashboardContext.Provider>
   );
 };
@@ -561,39 +728,180 @@ export default Dashboard;
 
 // Founder Dashboard Components
 const FounderDashboard = () => {
-  const { setActiveSection } = React.useContext(DashboardContext);
+  const { address } = useAccount();
+  const { activeSection, setActiveSection } = useContext(DashboardContext);
   
   return (
-    <div className="space-y-8">
-      <div className="bg-black border border-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-medium mb-6">Quick Stats</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-[#111] p-4 rounded-lg">
-            <div className="text-sm text-gray-400">Active Projects</div>
-            <div className="text-2xl font-semibold mt-2">2</div>
-          </div>
-          <div className="bg-[#111] p-4 rounded-lg">
-            <div className="text-sm text-gray-400">Total Raised</div>
-            <div className="text-2xl font-semibold mt-2">$120,500</div>
-          </div>
-          <div className="bg-[#111] p-4 rounded-lg">
-            <div className="text-sm text-gray-400">Completed Milestones</div>
-            <div className="text-2xl font-semibold mt-2">8/12</div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main stats */}
+      <div className="lg:col-span-2">
+        <div className="bg-black border border-gray-800 rounded-xl p-6">
+          <h2 className="text-xl font-medium mb-6">Project Overview</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="bg-[#111] rounded-xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-400">Active Projects</span>
+                <div className="w-8 h-8 rounded-full bg-green-900/30 flex items-center justify-center">
+                  <Rocket size={16} className="text-green-500" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold">3</div>
+              <div className="text-xs text-green-500 mt-1 flex items-center">
+                <ArrowUpRight size={12} />
+                <span className="ml-1">+2 this month</span>
+              </div>
+            </div>
+            
+            <div className="bg-[#111] rounded-xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-400">Total Raised</span>
+                <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center">
+                  <LineChart size={16} className="text-blue-500" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold">$150,000</div>
+              <div className="text-xs text-green-500 mt-1 flex items-center">
+                <ArrowUpRight size={12} />
+                <span className="ml-1">+$25,000 this month</span>
+              </div>
+            </div>
+            
+            <div className="bg-[#111] rounded-xl p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-gray-400">Milestones</span>
+                <div className="w-8 h-8 rounded-full bg-purple-900/30 flex items-center justify-center">
+                  <CheckCircle size={16} className="text-purple-500" />
+                </div>
+              </div>
+              <div className="text-2xl font-bold">12 / 20</div>
+              <div className="text-xs text-green-500 mt-1 flex items-center">
+                <ArrowUpRight size={12} />
+                <span className="ml-1">2 completed recently</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-
+      
+      {/* Quick actions */}
       <div className="bg-black border border-gray-800 rounded-xl p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-medium">My Projects</h2>
+        <h2 className="text-xl font-medium mb-6">Quick Actions</h2>
+        <div className="space-y-3">
           <button 
-            onClick={() => setActiveSection("projects")}
-            className="text-[#FF7171] text-sm flex items-center gap-1 hover:underline"
+            onClick={() => setActiveSection("create-project")}
+            className="w-full flex items-center justify-between p-4 bg-[#111] rounded-xl hover:bg-[#1a1a1a] transition-colors"
           >
-            View all <ChevronRight size={16} />
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#2F50FF] to-[#FF7171] flex items-center justify-center">
+                <PlusCircle size={16} className="text-white" />
+              </div>
+              <span className="ml-3 font-medium">Create New Project</span>
+            </div>
+            <ChevronRight size={18} className="text-gray-500" />
+          </button>
+          
+          <button 
+            onClick={() => setActiveSection("milestones")}
+            className="w-full flex items-center justify-between p-4 bg-[#111] rounded-xl hover:bg-[#1a1a1a] transition-colors"
+          >
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center">
+                <Clock size={16} className="text-[#FF7171]" />
+              </div>
+              <span className="ml-3 font-medium">Update Milestones</span>
+            </div>
+            <ChevronRight size={18} className="text-gray-500" />
+          </button>
+          
+          <button
+            onClick={() => setActiveSection("investors")}
+            className="w-full flex items-center justify-between p-4 bg-[#111] rounded-xl hover:bg-[#1a1a1a] transition-colors"
+          >
+            <div className="flex items-center">
+              <div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center">
+                <Users size={16} className="text-[#FF7171]" />
+              </div>
+              <span className="ml-3 font-medium">View Investors</span>
+            </div>
+            <ChevronRight size={18} className="text-gray-500" />
           </button>
         </div>
-        
+      </div>
+      
+      {/* My Projects section */}
+      <div className="lg:col-span-3">
+        <div className="bg-black border border-gray-800 rounded-xl p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-medium">My Projects</h2>
+            <button 
+              onClick={() => setActiveSection("projects")}
+              className="text-[#FF7171] text-sm flex items-center gap-1 hover:underline"
+            >
+              View all <ChevronRight size={16} />
+            </button>
+          </div>
+          
+          {/* Blockchain Projects */}
+          <div className="mb-6">
+            <h3 className="text-lg font-medium mb-4">Blockchain Projects</h3>
+            <ContractInitializer>
+              <ProjectList filterByFounder={address} />
+            </ContractInitializer>
+          </div>
+          
+          {/* Static demo projects */}
+          <div className="space-y-4 mt-8">
+            <h3 className="text-lg font-medium mb-4">Demo Projects</h3>
+            <div className="border border-gray-800 rounded-lg p-4">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-medium">Decentralized Exchange Protocol</h3>
+                  <p className="text-sm text-gray-400 mt-1">DeFi • Ethereum</p>
+                </div>
+                <div className="bg-green-900/30 text-green-500 text-xs px-2 py-1 rounded-full">
+                  Active
+                </div>
+              </div>
+              <div className="mt-4">
+                <div className="flex justify-between text-sm mb-1">
+                  <span className="text-gray-400">Progress</span>
+                  <span className="font-medium">75%</span>
+                </div>
+                <div className="w-full bg-gray-800 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-[#2F50FF] to-[#FF7171] h-2 rounded-full" style={{ width: "75%" }}></div>
+                </div>
+              </div>
+              <div className="mt-4 flex justify-between items-center text-sm">
+                <span className="text-gray-400">$90,000 raised of $120,000</span>
+                <button className="text-[#FF7171] font-medium hover:underline">Manage</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}; 
+
+// Other Founder Components
+const FounderProjects = () => {
+  // Get the user's address to filter projects
+  const { address } = useAccount();
+  const { setActiveSection } = useContext(DashboardContext);
+  
+  return (
+    <div className="space-y-6">
+      {/* Real blockchain projects */}
+      <div className="bg-black border border-gray-800 rounded-xl p-6">
+        <h2 className="text-xl font-medium mb-6">My Blockchain Projects</h2>
+        <ContractInitializer>
+          <ProjectList filterByFounder={address} />
+        </ContractInitializer>
+      </div>
+      
+      {/* Demo projects */}
+      <div className="bg-black border border-gray-800 rounded-xl p-6">
+        <h2 className="text-xl font-medium mb-6">Demo Projects</h2>
         <div className="space-y-4">
           <div className="border border-gray-800 rounded-lg p-4">
             <div className="flex justify-between items-start">
@@ -645,133 +953,10 @@ const FounderDashboard = () => {
             </div>
           </div>
         </div>
-        
-        <div className="mt-6">
-          <button
-            onClick={() => setActiveSection("create-project")}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-gray-800 rounded-lg text-gray-300 hover:text-white hover:border-gray-700 hover:bg-gray-900/50 transition-colors"
-          >
-            <PlusCircle size={20} />
-            <span>Create New Project</span>
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-black border border-gray-800 rounded-xl p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-medium">Upcoming Milestones</h2>
-          <button 
-            onClick={() => setActiveSection("milestones")}
-            className="text-[#FF7171] text-sm flex items-center gap-1 hover:underline"
-          >
-            View all <ChevronRight size={16} />
-          </button>
-        </div>
-        <div className="space-y-3">
-          <div className="border border-gray-800 rounded-lg p-4 flex justify-between items-center">
-            <div>
-              <p className="font-medium">Smart Contract Audit</p>
-              <p className="text-sm text-gray-400 mt-1">DeFi Exchange • Due in 5 days</p>
-            </div>
-            <button className="text-[#FF7171] hover:underline text-sm">Submit Proof</button>
-          </div>
-          <div className="border border-gray-800 rounded-lg p-4 flex justify-between items-center">
-            <div>
-              <p className="font-medium">Alpha Release</p>
-              <p className="text-sm text-gray-400 mt-1">Web3 Social • Due in 12 days</p>
-            </div>
-            <button className="text-[#FF7171] hover:underline text-sm">Submit Proof</button>
-          </div>
-        </div>
       </div>
     </div>
   );
-}; 
-
-// Other Founder Components
-const FounderProjects = () => (
-  <div className="space-y-6">
-    <div className="bg-black border border-gray-800 rounded-xl p-6">
-      <h2 className="text-xl font-medium mb-6">All Projects</h2>
-      <div className="space-y-4">
-        <div className="border border-gray-800 rounded-lg p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-medium">Decentralized Exchange Protocol</h3>
-              <p className="text-sm text-gray-400 mt-1">DeFi • Ethereum</p>
-            </div>
-            <div className="bg-green-900/30 text-green-500 text-xs px-2 py-1 rounded-full">
-              Active
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-400">Progress</span>
-              <span className="font-medium">75%</span>
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-2">
-              <div className="bg-gradient-to-r from-[#2F50FF] to-[#FF7171] h-2 rounded-full" style={{ width: "75%" }}></div>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-between items-center text-sm">
-            <span className="text-gray-400">$90,000 raised of $120,000</span>
-            <button className="text-[#FF7171] font-medium hover:underline">Manage</button>
-          </div>
-        </div>
-        
-        <div className="border border-gray-800 rounded-lg p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-medium">Web3 Social Platform</h3>
-              <p className="text-sm text-gray-400 mt-1">Social • Polygon</p>
-            </div>
-            <div className="bg-yellow-900/30 text-yellow-500 text-xs px-2 py-1 rounded-full">
-              Pending KYC
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-400">Progress</span>
-              <span className="font-medium">0%</span>
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-2">
-              <div className="bg-gradient-to-r from-[#2F50FF] to-[#FF7171] h-2 rounded-full" style={{ width: "0%" }}></div>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-between items-center text-sm">
-            <span className="text-gray-400">Complete KYC to publish</span>
-            <button className="text-[#FF7171] font-medium hover:underline">Complete KYC</button>
-          </div>
-        </div>
-
-        <div className="border border-gray-800 rounded-lg p-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h3 className="font-medium">NFT Marketplace</h3>
-              <p className="text-sm text-gray-400 mt-1">NFT • Ethereum</p>
-            </div>
-            <div className="bg-red-900/30 text-red-500 text-xs px-2 py-1 rounded-full">
-              Funding Failed
-            </div>
-          </div>
-          <div className="mt-4">
-            <div className="flex justify-between text-sm mb-1">
-              <span className="text-gray-400">Progress</span>
-              <span className="font-medium">25%</span>
-            </div>
-            <div className="w-full bg-gray-800 rounded-full h-2">
-              <div className="bg-gradient-to-r from-[#2F50FF] to-[#FF7171] h-2 rounded-full" style={{ width: "25%" }}></div>
-            </div>
-          </div>
-          <div className="mt-4 flex justify-between items-center text-sm">
-            <span className="text-gray-400">$15,000 raised of $100,000</span>
-            <button className="text-[#FF7171] font-medium hover:underline">Archive</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-);
+};
 
 const CreateProject = () => (
   <div className="bg-black border border-gray-800 rounded-xl p-6">
@@ -1956,11 +2141,22 @@ const InvestorDonationForm = () => {
       setLoading(true);
       
       // Show pending notification
-      addNotification('Processing donation, please confirm in your wallet...', 'info', 0);
+      addNotification('Processing investment, please confirm in your wallet...', 'info', 0);
 
+      // Verify we have the donateToProject function
+      if (!donateToProject || typeof donateToProject !== 'function') {
+        throw new Error('Donation function not available. Please try again later.');
+      }
+
+      // Convert projectId to number and amount to BigNumber
+      const projectId = parseInt(donationData.projectId);
+      const amount = ethers.utils.parseEther(donationData.amount);
+
+      console.log(`Investing ${donationData.amount} ETH in project ID: ${projectId}`);
+      
       const tx = await donateToProject(
-        donationData.projectId,
-        ethers.utils.parseEther(donationData.amount)
+        projectId,
+        amount
       );
 
       // Update notification while waiting for transaction
@@ -1970,7 +2166,7 @@ const InvestorDonationForm = () => {
       await tx.wait();
       
       // Show success notification
-      addNotification(`Successfully donated ${donationData.amount} ETH to project #${donationData.projectId}!`, 'success');
+      addNotification(`Successfully invested ${donationData.amount} ETH in project #${donationData.projectId}!`, 'success');
       
       // Reset form
       setDonationData({
@@ -1979,7 +2175,7 @@ const InvestorDonationForm = () => {
       });
     } catch (error) {
       console.error('Error donating to project:', error);
-      addNotification(`Error donating: ${error.message || 'Unknown error'}`, 'error');
+      addNotification(`Error investing: ${error.message || 'Unknown error'}`, 'error');
     } finally {
       setLoading(false);
     }

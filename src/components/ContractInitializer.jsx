@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useEffect, useState, useContext, useRef } from 'react';
 import { useContract } from '../context/ContractContext';
 import { DashboardContext } from './generalComponents/Dashboard';
 import { useAccount } from 'wagmi';
@@ -17,6 +17,8 @@ const ContractInitializer = ({ children }) => {
   const [isError, setIsError] = useState(false);
   const [errorDetails, setErrorDetails] = useState("");
   const [isInitializing, setIsInitializing] = useState(false);
+  // Add a ref to track if we've shown the connected notification
+  const hasShownSuccessNotification = useRef(false);
 
   useEffect(() => {
     const initializeContract = async () => {
@@ -56,12 +58,15 @@ const ContractInitializer = ({ children }) => {
         setIsInitialized(true);
         setIsError(false);
         
-        // Show notification that contract is connected
-        addNotification(
-          `Smart contract connected: ${CONTRACT_ADDRESS.substring(0, 6)}...${CONTRACT_ADDRESS.substring(CONTRACT_ADDRESS.length - 4)}`, 
-          'success', 
-          5000
-        );
+        // Show notification that contract is connected - ONLY IF we haven't shown it before
+        if (!hasShownSuccessNotification.current) {
+          addNotification(
+            `Smart contract connected: ${CONTRACT_ADDRESS.substring(0, 6)}...${CONTRACT_ADDRESS.substring(CONTRACT_ADDRESS.length - 4)}`, 
+            'success', 
+            3000 // Shortened duration to 3 seconds
+          );
+          hasShownSuccessNotification.current = true;
+        }
         
         // Clear the timeout since we completed successfully
         clearTimeout(timeoutId);
@@ -90,7 +95,7 @@ const ContractInitializer = ({ children }) => {
         addNotification(
           `Error connecting to smart contract: ${errorMessage}. Proceeding with limited functionality.`, 
           'error', 
-          0
+          5000 // Add a duration so it doesn't stay forever
         );
         
         // Clear the timeout since we completed with error

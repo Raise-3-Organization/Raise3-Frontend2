@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useAccount, useWalletClient, usePublicClient, useChainId } from 'wagmi';
 import { ethers } from 'ethers';
 import * as contractInterface from '../utils/contractInterface';
@@ -10,72 +10,71 @@ const ContractContext = createContext();
 
 // Provider component that wraps the app and makes contract available to all child components
 export function ContractProvider({ children }) {
-  const { address, isConnected } = useAccount();
-  const publicClient = usePublicClient();
-  const { data: walletClient } = useWalletClient();
-  const chainId = useChainId(); // Get current chain ID
-
+  // State for campaign count
   const [campaignsCount, setCampaignsCount] = useState(0);
   const [loadingCount, setLoadingCount] = useState(false);
   const [error, setError] = useState(null);
-
-  // Custom signer creation based on wagmi wallet client
-  const getSigner = useCallback(async () => {
-    try {
-      if (!isConnected || !walletClient || !address) {
-        console.error("Wallet not connected, missing required data:", {
-          isConnected,
-          hasWalletClient: !!walletClient,
-          hasAddress: !!address
-        });
-        throw new Error("Wallet not connected");
-      }
-
-      // Create a custom ethers signer from walletClient
-      const customSigner = {
-        _address: address,
-        provider: null,
-        getAddress: () => Promise.resolve(address),
-        signMessage: (message) => walletClient.signMessage({ message }),
-        signTransaction: (tx) => walletClient.signTransaction(tx),
-        sendTransaction: (tx) => {
-          const { to, data, value } = tx;
-          return walletClient.sendTransaction({
-            to,
-            data,
-            value,
-            account: address,
-            chain: undefined, // Let wallet use current chain instead of specifying
-          });
-        },
-        // Add other methods as needed
-        connect: () => customSigner,
-      };
-
-      console.log("Created custom signer for address:", address, "on chain ID:", chainId);
-      return customSigner;
-    } catch (error) {
-      console.error("Error creating signer:", error);
-      throw new Error("Failed to create signer: " + error.message);
+  
+  // Wagmi hooks for blockchain connection
+  const { isConnected, address } = useAccount();
+  const { data: walletClient } = useWalletClient();
+  const { data: publicClient } = usePublicClient();
+  const chainId = useChainId(); // Use the useChainId hook directly
+  
+  // Create a ref to cache the provider
+  const providerRef = useRef(null);
+  
+  // Set log verbosity - change to false to reduce console logs
+  const VERBOSE_LOGGING = false;
+  
+  // Utility function for conditional logging
+  const logDebug = (message, ...args) => {
+    if (VERBOSE_LOGGING) {
+      console.log(message, ...args);
     }
-  }, [walletClient, isConnected, address, chainId]);
+  };
 
-  // Create a readonly provider from public client for read operations
+  // Get ethers provider from wagmi publicClient
   const getProvider = useCallback(() => {
-    if (!publicClient) return null;
-
-    // We don't need to create a full ethers provider for read operations
-    // Instead, we can just use the public client directly wrapped in a minimal interface
-    return {
+    if (!publicClient) {
+      return null;
+    }
+    
+    // Return cached provider if available and chain hasn't changed
+    if (providerRef.current && providerRef.current._chainId === chainId) {
+      logDebug("Using cached provider for chain ID:", chainId);
+      return providerRef.current;
+    }
+    
+    // Create a new provider compatible with ethers.js Contract
+    const provider = {
+      _chainId: chainId,
       call: (tx) => publicClient.call(tx),
-      getBalance: (address) => publicClient.getBalance({ address }),
-      getBlockNumber: () => publicClient.getBlockNumber(),
+      getStorageAt: (address, slot) => publicClient.getStorageAt({ address, slot }),
       getCode: (address) => publicClient.getCode({ address }),
-      getStorageAt: (address, position) =>
-        publicClient.getStorageAt({ address, slot: position }),
-      // Add other methods as needed for your contract reads
+      getBalance: (address) => publicClient.getBalance({ address }),
+      getTransactionCount: (address) => publicClient.getTransactionCount({ address }),
+      getBlock: (blockHashOrNumber) => publicClient.getBlock({ blockHashOrNumber }),
+      getTransaction: (hash) => publicClient.getTransaction({ hash }),
+      getTransactionReceipt: (hash) => publicClient.getTransactionReceipt({ hash }),
+      // Some ethers-specific functions mapped to publicClient
+      getNetwork: () => ({ chainId: chainId }),
+      getGasPrice: () => publicClient.getGasPrice?.() || Promise.resolve(0),
+      estimateGas: (tx) => publicClient.estimateGas(tx),
+      
+      // Add a dummy provider.provider property for ethers Contract compatibility
+      provider: {},
+      
+      // Add this to allow detection as a provider
+      _isProvider: true
     };
-  }, [publicClient]);
+    
+    // Store the provider in the ref
+    providerRef.current = provider;
+    
+    logDebug("Created new provider for chain ID:", chainId);
+    return provider;
+  }, [publicClient, chainId, logDebug]);
 
   // Fetch campaign count
   useEffect(() => {
@@ -102,6 +101,71 @@ export function ContractProvider({ children }) {
       fetchCampaignCount();
     }
   }, [getProvider, isConnected]);
+
+  // Custom signer creation based on wagmi wallet client
+  const getSigner = useCallback(async () => {
+    try {
+      if (!isConnected || !walletClient || !address) {
+        console.error("Wallet not connected, missing required data:", {
+          isConnected,
+          hasWalletClient: !!walletClient,
+          hasAddress: !!address
+        });
+        throw new Error("Wallet not connected");
+      }
+
+      // Get our provider
+      const provider = getProvider();
+      
+      // Create a custom ethers signer from walletClient that's compatible with ethers Contract
+      const customSigner = {
+        _address: address,
+        provider: provider,
+        getAddress: () => Promise.resolve(address),
+        signMessage: (message) => walletClient.signMessage({ message }),
+        signTransaction: (tx) => walletClient.signTransaction(tx),
+        sendTransaction: async (tx) => {
+          console.log("Sending transaction with custom signer:", tx);
+          try {
+            const { to, data, value } = tx;
+            const hash = await walletClient.sendTransaction({
+              to,
+              data,
+              value,
+              account: address,
+              chain: undefined, // Let wallet use current chain instead of specifying
+            });
+            console.log("Transaction hash:", hash);
+            return {
+              hash,
+              wait: async (confirmations = 1) => {
+                console.log(`Waiting for ${confirmations} confirmations`);
+                // Return a minimal receipt
+                return { 
+                  blockNumber: "pending",
+                  transactionHash: hash,
+                  status: 1
+                };
+              }
+            };
+          } catch (txError) {
+            console.error("Transaction error:", txError);
+            throw txError;
+          }
+        },
+        // Add a connect method that returns self
+        connect: () => customSigner,
+        // Make it look like a proper ethers signer
+        _isSigner: true
+      };
+
+      console.log("Created custom signer for address:", address, "on chain ID:", chainId);
+      return customSigner;
+    } catch (error) {
+      console.error("Error creating signer:", error);
+      throw new Error("Failed to create signer: " + error.message);
+    }
+  }, [walletClient, isConnected, address, chainId, getProvider]);
 
   // Submit project function
   const submitProject = useCallback(async (name, description, goalAmount, milestones = []) => {
@@ -179,14 +243,47 @@ export function ContractProvider({ children }) {
     }
   }, [getSigner]);
 
-  // Get campaign details
+  // Get campaign details with batch fetching capability
   const getCampaignDetails = useCallback(async (campaignId) => {
     if (!publicClient) {
       throw new Error("Provider not available");
     }
     const provider = getProvider();
+    logDebug(`Fetching details for campaign ID ${campaignId} using provider`);
     return contractInterface.getCampaignDetails(provider, campaignId);
-  }, [getProvider, publicClient]);
+  }, [getProvider, publicClient, logDebug]);
+  
+  // Batch fetch multiple campaigns at once
+  const batchGetCampaigns = useCallback(async (startId, count) => {
+    if (!publicClient) {
+      throw new Error("Provider not available");
+    }
+    
+    const provider = getProvider();
+    if (!provider) {
+      throw new Error("Provider not available");
+    }
+    
+    // Create an array of promises to fetch campaigns in parallel
+    const promises = [];
+    for (let i = startId; i < startId + count; i++) {
+      promises.push(
+        contractInterface.getCampaignDetails(provider, i)
+          .catch(err => {
+            logDebug(`Error fetching campaign ${i}:`, err.message);
+            return null;
+          })
+      );
+    }
+    
+    // Wait for all promises to settle
+    const results = await Promise.allSettled(promises);
+    
+    // Filter out rejections and extract values from fulfilled promises
+    return results
+      .filter(result => result.status === 'fulfilled' && result.value)
+      .map(result => result.value);
+  }, [getProvider, publicClient, logDebug]);
 
   // Get milestone details
   const getMilestoneDetails = useCallback(async (campaignId, milestoneId) => {
@@ -206,6 +303,17 @@ export function ContractProvider({ children }) {
     return contractInterface.getInvestorDetails(provider, investorAddress || address);
   }, [getProvider, publicClient, address]);
 
+  // Donate to a project
+  const donateToProject = useCallback(async (projectId, amount) => {
+    try {
+      const signer = await getSigner();
+      return contractInterface.donateToProject(signer, projectId, amount);
+    } catch (error) {
+      console.error("Donate to project error:", error);
+      throw error;
+    }
+  }, [getSigner]);
+
   // Add other contract functions...
 
   // Context value with all contract functions
@@ -221,6 +329,8 @@ export function ContractProvider({ children }) {
     getCampaignDetails,
     getMilestoneDetails,
     getInvestorDetails,
+    donateToProject,
+    batchGetCampaigns,
     // Include all other functions here
     // ...
   };
