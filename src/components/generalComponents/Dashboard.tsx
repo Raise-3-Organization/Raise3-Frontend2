@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, createContext, useContext, useRef } from "react";
+import React, { useState, useEffect, createContext, useRef } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -26,7 +26,9 @@ import {
   Moon,
   Sun,
   Bell,
-  Building
+  Building,
+  Search,
+  Clock8
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import ProjectList from '../ProjectList';
@@ -36,6 +38,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { useContract } from "@/context/ContractContext";
 import { ethers } from "ethers";
 import ContractInitializer from '../ContractInitializer';
+import Footer from "@/components/landingPage/Footer";
+import TopNavigation from "./TopNavigation";
+import SearchBar from "./SearchBar";
+import EmptyProjectState from "./EmptyProjectState";
 
 type UserRole = "founder" | "investor" | "both";
 type ActiveView = "founder" | "investor";
@@ -247,32 +253,73 @@ const Dashboard = () => {
   const getNavItems = () => {
     if (activeView === "founder") {
       return [
-        { id: "dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard", active: activeSection === "dashboard" },
-        { id: "projects", icon: <Rocket size={20} />, label: "My Projects", active: activeSection === "projects" },
-        { id: "create-project", icon: <FileText size={20} />, label: "Create Project", active: activeSection === "create-project" },
-        { id: "milestones", icon: <Clock size={20} />, label: "Milestones", active: activeSection === "milestones" },
-        { id: "investors", icon: <Users size={20} />, label: "Investors", active: activeSection === "investors" },
-      ];
+        {
+          id: "dashboard",
+          icon: <LayoutDashboard size={20} />,
+          label: "Dashboard",
+          active: activeSection === "dashboard",
+        },
+        { id: "campaigns", icon: <Rocket size={20} />, label: "My Campaigns", active: activeSection === "campaigns" },
+        { id: "messages", icon: <FileText size={20} />, label: "Messages", active: activeSection === "messages" },
+        {
+          id: "notifications",
+          icon: <Bell size={20} />,
+          label: "Notifications",
+          active: activeSection === "notifications",
+        },
+      ]
     } else {
       return [
-        { id: "dashboard", icon: <LayoutDashboard size={20} />, label: "Dashboard", active: activeSection === "dashboard" },
-        { id: "investments", icon: <Briefcase size={20} />, label: "Investments", active: activeSection === "investments" },
-        { id: "browse-projects", icon: <Rocket size={20} />, label: "Browse Projects", active: activeSection === "browse-projects" },
-        { id: "performance", icon: <BarChart3 size={20} />, label: "Performance", active: activeSection === "performance" },
-        { id: "wallet", icon: <Wallet size={20} />, label: "Wallet", active: activeSection === "wallet" },
-      ];
+        {
+          id: "dashboard",
+          icon: <LayoutDashboard size={20} />,
+          label: "Dashboard",
+          active: activeSection === "dashboard",
+        },
+        {
+          id: "investments",
+          icon: <Briefcase size={20} />,
+          label: "Investments",
+          active: activeSection === "investments",
+        },
+        {
+          id: "browse-projects",
+          icon: <Rocket size={20} />,
+          label: "Browse Projects",
+          active: activeSection === "browse-projects",
+        },
+        {
+          id: "performance",
+          icon: <BarChart3 size={20} />,
+          label: "Performance",
+          active: activeSection === "performance",
+        },
+        { 
+          id: "wallet", 
+          icon: <Wallet size={20} />, 
+          label: "Wallet", 
+          active: activeSection === "wallet",
+          subItems: [
+            { 
+              id: "settings", 
+              icon: <Settings size={20} />, 
+              label: "Settings", 
+              active: activeSection === "settings" 
+            }
+          ]
+        },
+      ]
     }
-  };
+  }
 
   // Helper function to get dashboard title
   const getDashboardTitle = () => {
     if (activeView === "founder") {
       switch (activeSection) {
         case "dashboard": return "Founder Dashboard";
-        case "projects": return "My Projects";
-        case "create-project": return "Create New Project";
-        case "milestones": return "Project Milestones";
-        case "investors": return "Potential Investors";
+        case "campaigns": return "My Campaigns";
+        case "messages": return "Messages";
+        case "notifications": return "Notifications";
         case "settings": return "Account Settings";
         default: return "Founder Dashboard";
       }
@@ -294,10 +341,9 @@ const Dashboard = () => {
     if (activeView === "founder") {
       switch (activeSection) {
         case "dashboard": return "Manage your projects and milestones";
-        case "projects": return "View and manage your existing projects";
-        case "create-project": return "Set up a new fundraising project";
-        case "milestones": return "Track and submit proofs for your project milestones";
-        case "investors": return "View investors interested in your project type";
+        case "campaigns": return "View and manage your existing campaigns";
+        case "messages": return "Send and receive messages with investors";
+        case "notifications": return "Manage notifications for your projects";
         case "settings": return "Manage your founder account settings";
         default: return "Manage your projects and milestones";
       }
@@ -319,7 +365,7 @@ const Dashboard = () => {
     switch (activeSection) {
       case "dashboard":
         return <FounderDashboard />;
-      case "projects":
+      case "campaigns":
         return <FounderProjects />;
       case "create-project":
         return <ContractInitializer><CreateProject /></ContractInitializer>;
@@ -381,42 +427,20 @@ const Dashboard = () => {
     return <RegistrationModal />;
   }
 
+  const handleAddProject = () => {
+    setActiveSection("campaigns");
+  };
+
   return (
     <DashboardContext.Provider value={dashboardContextValue}>
       <div className="min-h-screen bg-black text-white flex flex-col lg:flex-row max-w-screen overflow-hidden">
-        {/* Sidebar - Hidden on mobile, visible on desktop */}
+        {/* Sidebar */}
         <aside className="hidden lg:flex flex-col w-64 shrink-0 bg-[#0B0B0F] border-r border-gray-800 h-screen sticky top-0 overflow-y-auto">
           {/* Logo */}
           <div className="p-4 border-b border-gray-800">
             <div className="flex items-center space-x-2">
               <Image src="/Subtract.png" alt="Raise3 Logo" width={28} height={28} />
               <span className="text-xl font-bold">Raise3</span>
-            </div>
-          </div>
-          
-          {/* Role Toggle - Remove the userRole condition */}
-          <div className="p-4 border-b border-gray-800">
-            <div className="flex rounded-lg bg-[#111] overflow-hidden">
-              <button
-                onClick={() => toggleView("founder")}
-                className={`flex-1 py-2 text-center text-sm font-medium ${
-                  activeView === "founder" 
-                    ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white" 
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                Founder
-              </button>
-              <button
-                onClick={() => toggleView("investor")}
-                className={`flex-1 py-2 text-center text-sm font-medium ${
-                  activeView === "investor" 
-                    ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white" 
-                    : "text-gray-400 hover:text-white"
-                }`}
-              >
-                Investor
-              </button>
             </div>
           </div>
           
@@ -436,55 +460,37 @@ const Dashboard = () => {
                     <span className={item.active ? "text-[#FF7171]" : ""}>{item.icon}</span>
                     <span>{item.label}</span>
                   </button>
+                  {item.subItems && (
+                    <ul className="ml-6 mt-1 space-y-1">
+                      {item.subItems.map((subItem) => (
+                        <li key={subItem.id}>
+                          <button
+                            onClick={() => setActiveSection(subItem.id)}
+                            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors ${
+                              subItem.active
+                                ? "bg-[#181818] text-white font-medium"
+                                : "text-gray-400 hover:bg-[#181818] hover:text-white"
+                            }`}
+                          >
+                            <span className={subItem.active ? "text-[#FF7171]" : ""}>{subItem.icon}</span>
+                            <span>{subItem.label}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </li>
               ))}
-              <li className="pt-2">
-                <button
-                  onClick={() => setActiveSection("settings")}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                    activeSection === "settings"
-                      ? "bg-[#181818] text-white font-medium"
-                      : "text-gray-400 hover:bg-[#181818] hover:text-white"
-                  }`}
-                >
-                  <span className={activeSection === "settings" ? "text-[#FF7171]" : ""}>
-                    <Settings size={20} />
-                  </span>
-                  <span>Settings</span>
-                </button>
-              </li>
             </ul>
           </nav>
-          
-          {/* User info */}
-          <div className="p-4 border-t border-gray-800">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                  {address && address[0].toUpperCase()}
-                </div>
-                <div>
-                  <span className="text-sm font-medium text-white">
-                    {formatAddress(address)}
-                  </span>
-                </div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="text-gray-400 hover:text-white"
-              >
-                <LogOut size={18} />
-              </button>
-            </div>
-          </div>
         </aside>
 
-        {/* Mobile sidebar - Overlay when open */}
+        {/* Mobile sidebar */}
         {isMobileMenuOpen && (
           <div className="fixed inset-0 z-40 lg:hidden">
             <div className="fixed inset-0 bg-black bg-opacity-70" onClick={() => setIsMobileMenuOpen(false)}></div>
             <div className="fixed inset-y-0 left-0 w-64 bg-[#0B0B0F] border-r border-gray-800 z-50 overflow-y-auto">
-              {/* Mobile sidebar content - same as desktop but in overlay */}
+              {/* Mobile sidebar content */}
               <div className="p-4 border-b border-gray-800">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
@@ -496,38 +502,6 @@ const Dashboard = () => {
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <X size={20} />
-                  </button>
-                </div>
-              </div>
-              
-              {/* Role Toggle - Always visible */}
-              <div className="p-4 border-b border-gray-800">
-                <div className="flex rounded-lg bg-[#111] overflow-hidden">
-                  <button
-                    onClick={() => {
-                      toggleView("founder");
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`flex-1 py-2 text-center text-sm font-medium ${
-                      activeView === "founder" 
-                        ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white" 
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    Founder
-                  </button>
-                  <button
-                    onClick={() => {
-                      toggleView("investor");
-                      setIsMobileMenuOpen(false);
-                    }}
-                    className={`flex-1 py-2 text-center text-sm font-medium ${
-                      activeView === "investor" 
-                        ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white" 
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    Investor
                   </button>
                 </div>
               </div>
@@ -553,48 +527,8 @@ const Dashboard = () => {
                       </button>
                     </li>
                   ))}
-                  <li className="pt-2">
-                    <button
-                      onClick={() => {
-                        setActiveSection("settings");
-                        setIsMobileMenuOpen(false);
-                      }}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                        activeSection === "settings"
-                          ? "bg-[#181818] text-white font-medium"
-                          : "text-gray-400 hover:bg-[#181818] hover:text-white"
-                      }`}
-                    >
-                      <span className={activeSection === "settings" ? "text-[#FF7171]" : ""}>
-                        <Settings size={20} />
-                      </span>
-                      <span>Settings</span>
-                    </button>
-                  </li>
                 </ul>
               </nav>
-              
-              {/* User info */}
-              <div className="p-4 border-t border-gray-800 mt-auto">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
-                      {address && address[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <span className="text-sm font-medium text-white">
-                        {formatAddress(address)}
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <LogOut size={18} />
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         )}
@@ -659,64 +593,28 @@ const Dashboard = () => {
             </div>
           </header>
 
+          {/* Desktop Header */}
+          <TopNavigation walletAddress={address} onSwitchView={() => toggleView(activeView === "founder" ? "investor" : "founder")} />
+
           {/* Content */}
-          <main className="flex-1 px-4 md:px-6 lg:px-8 py-6">
-            {/* Page Header */}
-            <div className="mb-6 md:mb-8">
-              <div className="flex items-center justify-between pb-4">
-                <div>
-                  <h1 className="text-2xl md:text-3xl font-bold">{getDashboardTitle()}</h1>
-                  <p className="text-gray-400 mt-1">{getDashboardDescription()}</p>
-                </div>
-                
-                {/* Desktop Header Controls */}
-                <div className="hidden lg:flex items-center space-x-3">
-                  <button
-                    onClick={toggleTheme}
-                    className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800"
-                  >
-                    {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
-                  </button>
-                  <button
-                    className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800 relative"
-                  >
-                    <Bell size={20} />
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                  </button>
-                  {/* Role toggle - Always visible */}
-                  <div className="flex rounded-lg bg-[#111] overflow-hidden">
-                    <button
-                      onClick={() => toggleView("founder")}
-                      className={`px-4 py-2 text-sm font-medium ${
-                        activeView === "founder" 
-                          ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white" 
-                          : "text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      Founder
-                    </button>
-                    <button
-                      onClick={() => toggleView("investor")}
-                      className={`px-4 py-2 text-sm font-medium ${
-                        activeView === "investor" 
-                          ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white" 
-                          : "text-gray-400 hover:text-white"
-                      }`}
-                    >
-                      Investor
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Page Content */}
-            <div className="space-y-6">
-              {activeView === "founder" ? renderFounderContent() : renderInvestorContent()}
+          <main className="flex-1 bg-white text-black">
+            {/* Dashboard Content */}
+            <div className="p-6">
+              <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
+              <p className="text-gray-500 mb-8">
+                Explore our curated list of grant programs for innovators and creators: from tech pioneers to community
+                leaders, there is a grant program to elevate your project.
+              </p>
+
+              {/* Empty State */}
+              <EmptyProjectState walletAddress={address} onAddProject={handleAddProject} />
             </div>
           </main>
+
+          {/* Footer */}
+          <Footer />
         </div>
-        
+
         {/* Notifications */}
         <TransactionNotification notifications={notifications} removeNotification={removeNotification} />
       </div>
@@ -845,7 +743,7 @@ const FounderDashboard = () => {
           <div className="mb-6">
             <h3 className="text-lg font-medium mb-4">Blockchain Projects</h3>
             <ContractInitializer>
-              <ProjectList filterByFounder={address} />
+              <ProjectList filterByFounder={address || undefined} />
             </ContractInitializer>
           </div>
           
@@ -895,7 +793,7 @@ const FounderProjects = () => {
       <div className="bg-black border border-gray-800 rounded-xl p-6">
         <h2 className="text-xl font-medium mb-6">My Blockchain Projects</h2>
         <ContractInitializer>
-          <ProjectList filterByFounder={address} />
+          <ProjectList filterByFounder={address || undefined} />
         </ContractInitializer>
       </div>
       
@@ -2116,13 +2014,13 @@ const InvestorDonationForm = () => {
   const [loading, setLoading] = useState(false);
   
   // Handle donation input changes
-  const handleDonationChange = (e) => {
+  const handleDonationChange = (e: DonationInputEvent) => {
     const { name, value } = e.target;
     setDonationData(prev => ({ ...prev, [name]: value }));
   };
 
   // Handle donation submission
-  const handleDonate = async (e) => {
+  const handleDonate = async (e: DonationFormEvent) => {
     e.preventDefault();
     
     // Check both Wagmi and contract connection status
@@ -2173,9 +2071,10 @@ const InvestorDonationForm = () => {
         projectId: '',
         amount: ''
       });
-    } catch (error) {
-      console.error('Error donating to project:', error);
-      addNotification(`Error investing: ${error.message || 'Unknown error'}`, 'error');
+    } catch (error: unknown) {
+      console.error("Error donating to project:", error);
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      addNotification(`Error investing: ${errorMessage}`, "error");
     } finally {
       setLoading(false);
     }
