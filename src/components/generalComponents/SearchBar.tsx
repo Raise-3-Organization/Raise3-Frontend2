@@ -26,7 +26,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ placeholder = "Search", onSearch 
         placeholder={placeholder}
         value={query}
         onChange={handleChange}
-        className="w-full pl-12 pr-4 h-[38px] rounded-[1000px] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full pl-12 pr-4 h-[38px] rounded-[1000px] border border-gray-800 bg-[#111] text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#FF7171]"
         style={{ marginTop: '16px', marginLeft: '38px' }}
       />
       <div className="absolute inset-y-0 left-0 pl-[50px] flex items-center pointer-events-none" style={{ marginTop: '16px' }}>

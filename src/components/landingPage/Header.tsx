@@ -4,7 +4,7 @@ import Image from "next/image";
 import { Wallet, Moon, Sun, ChevronDown, LogOut } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import ConnectWallet from "../ConnectWallet";
+import { ConnectButton } from '../walletConnection/ConnectButton';
 
 const Header = () => {
   const { theme, setTheme } = useTheme();
@@ -120,14 +120,22 @@ const Header = () => {
   return (
     <>
       {showConnectWallet && (
-        <div className="fixed inset-0 z-50">
-          <ConnectWallet />
-          <button 
-            onClick={() => setShowConnectWallet(false)}
-            className="absolute top-4 right-4 text-white text-xl font-bold bg-purple-800 rounded-full w-8 h-8 flex items-center justify-center cursor-pointer z-50"
-          >
-            ×
-          </button>
+        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center">
+          <div className="bg-white dark:bg-[#1c1c24] p-8 rounded-lg max-w-md w-full">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Connect Your Wallet</h3>
+              <button 
+                onClick={() => setShowConnectWallet(false)}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                ×
+              </button>
+            </div>
+            {/* Using our custom ConnectButton with the brand gradient */}
+            <div className="flex flex-col gap-4">
+              <ConnectButton />
+            </div>
+          </div>
         </div>
       )}
       
@@ -198,40 +206,7 @@ const Header = () => {
           <div ref={walletButtonRef} className="relative">
             {/* Only render the wallet content after mounting to prevent hydration mismatch */}
             {mounted ? (
-              <>
-                {isConnected ? (
-                  <>
-                    <button 
-                      onClick={handleConnectWallet}
-                      className="px-4 py-2 text-sm text-white rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 flex items-center gap-2 cursor-pointer"
-                    >
-                      <Wallet size={16} />
-                      {formatAddress(address!)}
-                    </button>
-                    
-                    {showWalletOptions && (
-                      <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-[#1c1c24] rounded-md shadow-md py-2 z-50">
-                        <button 
-                          onClick={handleDisconnect}
-                          className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-800 dark:text-white hover:bg-gray-100 dark:hover:bg-[#2c2c34] cursor-pointer"
-                          disabled={disconnecting}
-                        >
-                          <LogOut size={16} />
-                          {disconnecting ? 'Disconnecting...' : 'Disconnect'}
-                        </button>
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <button 
-                    onClick={handleConnectWallet}
-                    className="px-4 py-2 text-sm text-white rounded-full bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] hover:opacity-90 flex items-center gap-2 cursor-pointer"
-                  >
-                    <Wallet size={16} />
-                    Connect Wallet
-                  </button>
-                )}
-              </>
+              <ConnectButton />
             ) : (
               // Show a skeleton button during server-side rendering and initial client render
               <button 

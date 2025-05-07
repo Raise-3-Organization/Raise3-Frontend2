@@ -1,14 +1,16 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useAccount } from "wagmi";
 import Footer from "@/components/landingPage/Footer";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const step = searchParams.get('step');
 
   // Initialize variables outside the try-catch block
   const accountData = useAccount();
@@ -19,8 +21,27 @@ export default function RegisterPage() {
   useEffect(() => {
     if (isConnected && address) {
       setWalletAddress(address);
+      
+      // For new wallets, always show the registration process
+      // (no automatic redirect to dashboard)
+      
+      // If we're coming from the redirector with a specific step
+      if (step === 'role-selection') {
+        // User has connected but needs to choose role
+        // The role selection UI will show
+        console.log('New wallet connected - showing role selection');
+      } else {
+        // Check if user has a stored role to use as default selection
+        const storedRole = localStorage.getItem(`userRole-${address}`);
+        if (storedRole) {
+          setSelectedRole(storedRole);
+        }
+      }
+      
+      // Mark that the user has at least started registration
+      localStorage.setItem(`userType-${address}`, 'registered');
     }
-  }, [isConnected, address]);
+  }, [isConnected, address, step, router]);
 
   // Redirect to connect wallet if not connected
   useEffect(() => {
@@ -42,8 +63,10 @@ export default function RegisterPage() {
       return;
     }
 
-    // Store role information
-    localStorage.setItem("user-role", selectedRole);
+    // Store role information with wallet address as key
+    if (walletAddress) {
+      localStorage.setItem(`userRole-${walletAddress}`, selectedRole);
+    }
     
     // Redirect to dashboard
     router.push("/dashboard");

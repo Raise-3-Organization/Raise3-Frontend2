@@ -49,304 +49,342 @@ export function ContractProvider({ children }) {
     // Create a new provider compatible with ethers.js Contract
     const provider = {
       _chainId: chainId,
-      call: (tx) => publicClient.call(tx),
-      getStorageAt: (address, slot) => publicClient.getStorageAt({ address, slot }),
-      getCode: (address) => publicClient.getCode({ address }),
-      getBalance: (address) => publicClient.getBalance({ address }),
-      getTransactionCount: (address) => publicClient.getTransactionCount({ address }),
-      getBlock: (blockHashOrNumber) => publicClient.getBlock({ blockHashOrNumber }),
-      getTransaction: (hash) => publicClient.getTransaction({ hash }),
-      getTransactionReceipt: (hash) => publicClient.getTransactionReceipt({ hash }),
-      // Some ethers-specific functions mapped to publicClient
-      getNetwork: () => ({ chainId: chainId }),
-      getGasPrice: () => publicClient.getGasPrice?.() || Promise.resolve(0),
-      estimateGas: (tx) => publicClient.estimateGas(tx),
-      
-      // Add a dummy provider.provider property for ethers Contract compatibility
-      provider: {},
-      
-      // Add this to allow detection as a provider
-      _isProvider: true
+      getCode: async (address) => {
+        try {
+          return await publicClient.getCode({ address });
+        } catch (e) {
+          console.error("Error in getCode:", e);
+          return "0x"; // Return empty code on error
+        }
+      },
+      call: async (transaction) => {
+        try {
+          const { to, data } = transaction;
+          const result = await publicClient.call({
+            to,
+            data,
+          });
+          return result.data || "0x";
+        } catch (e) {
+          console.error("Error in call:", e);
+          throw e;
+        }
+      },
+      getBlockNumber: async () => {
+        try {
+          const blockNumber = await publicClient.getBlockNumber();
+          return BigInt(blockNumber.toString());
+        } catch (e) {
+          console.error("Error in getBlockNumber:", e);
+          return BigInt(0);
+        }
+      },
     };
     
-    // Store the provider in the ref
+    // Cache the provider
     providerRef.current = provider;
     
-    logDebug("Created new provider for chain ID:", chainId);
     return provider;
-  }, [publicClient, chainId, logDebug]);
+  }, [publicClient, chainId]);
 
-  // Fetch campaign count
-  useEffect(() => {
-    const fetchCampaignCount = async () => {
-      const provider = getProvider();
-      if (!provider) return;
-
-      try {
-        setLoadingCount(true);
-        setError(null);
-
-        // Use getCampaignsCount without chainId parameter
-        const count = await contractInterface.getCampaignsCount(provider);
-        setCampaignsCount(count);
-      } catch (error) {
-        console.error("Failed to fetch campaign count:", error);
-        setError("Failed to load campaign count");
-      } finally {
-        setLoadingCount(false);
-      }
-    };
-
-    if (isConnected) {
-      fetchCampaignCount();
+  // Get a signer from walletClient
+  const getSigner = useCallback(() => {
+    if (!walletClient || !address) {
+      return null;
     }
-  }, [getProvider, isConnected]);
-
-  // Custom signer creation based on wagmi wallet client
-  const getSigner = useCallback(async () => {
-    try {
-      if (!isConnected || !walletClient || !address) {
-        console.error("Wallet not connected, missing required data:", {
-          isConnected,
-          hasWalletClient: !!walletClient,
-          hasAddress: !!address
+    
+    const signer = {
+      provider: getProvider(),
+      _address: address,
+      getAddress: async () => address,
+      signMessage: async (message) => {
+        return await walletClient.signMessage({ message });
+      },
+      sendTransaction: async (transaction) => {
+        const { to, data, value } = transaction;
+        const hash = await walletClient.sendTransaction({
+          to,
+          data,
+          value,
+          account: address,
         });
-        throw new Error("Wallet not connected");
-      }
+        return { hash };
+      },
+    };
+    
+    return signer;
+  }, [walletClient, address, getProvider]);
 
-      // Get our provider
-      const provider = getProvider();
-      
-      // Create a custom ethers signer from walletClient that's compatible with ethers Contract
-      const customSigner = {
-        _address: address,
-        provider: provider,
-        getAddress: () => Promise.resolve(address),
-        signMessage: (message) => walletClient.signMessage({ message }),
-        signTransaction: (tx) => walletClient.signTransaction(tx),
-        sendTransaction: async (tx) => {
-          console.log("Sending transaction with custom signer:", tx);
-          try {
-            const { to, data, value } = tx;
-            const hash = await walletClient.sendTransaction({
-              to,
-              data,
-              value,
-              account: address,
-              chain: undefined, // Let wallet use current chain instead of specifying
-            });
-            console.log("Transaction hash:", hash);
-            return {
-              hash,
-              wait: async (confirmations = 1) => {
-                console.log(`Waiting for ${confirmations} confirmations`);
-                // Return a minimal receipt
-                return { 
-                  blockNumber: "pending",
-                  transactionHash: hash,
-                  status: 1
-                };
-              }
-            };
-          } catch (txError) {
-            console.error("Transaction error:", txError);
-            throw txError;
-          }
-        },
-        // Add a connect method that returns self
-        connect: () => customSigner,
-        // Make it look like a proper ethers signer
-        _isSigner: true
-      };
-
-      console.log("Created custom signer for address:", address, "on chain ID:", chainId);
-      return customSigner;
-    } catch (error) {
-      console.error("Error creating signer:", error);
-      throw new Error("Failed to create signer: " + error.message);
+  // Refresh campaign count
+  const refreshCampaignCount = useCallback(async () => {
+    if (!isConnected) {
+      setCampaignsCount(0);
+      return;
     }
-  }, [walletClient, isConnected, address, chainId, getProvider]);
-
-  // Submit project function
-  const submitProject = useCallback(async (name, description, goalAmount, milestones = []) => {
+    
+    setLoadingCount(true);
+    setError(null);
+    
     try {
-      console.log("Submit Project called with:", { name, description });
-      console.log("Current chain ID:", chainId);
-
-      if (!isConnected) {
-        throw new Error("Wallet not connected");
+      const provider = getProvider();
+      if (!provider) {
+        throw new Error("Provider not available");
       }
-
-      console.log("Getting signer...");
-      const signer = await getSigner();
-      console.log("Signer obtained for address:", signer._address);
-
-      // Create metadata
-      const metaUrl = JSON.stringify({
-        name,
-        description,
-        milestones: milestones.map(m => ({
-          name: m.milestoneName,
-          description: m.milestoneDescription,
-          amount: m.fundNeeded.toString()
-        }))
-      });
-
-      console.log("Creating project with metadata:", metaUrl.substring(0, 100) + "...");
-
-      // Use CONTRACT_ADDRESS directly
-      const tx = {
-        to: contractInterface.CONTRACT_ADDRESS,
-        data: contractInterface.getCreateCampaignData(metaUrl, goalAmount, 0),
-        value: 0,
-        // Don't specify chainId, let the wallet use current chain
-      };
-
-      console.log("Sending transaction to contract address:", contractInterface.CONTRACT_ADDRESS);
-      const txHash = await signer.sendTransaction(tx);
-      console.log("Transaction sent with hash:", txHash);
-
-      // Return a transaction receipt-like object
-      return {
-        hash: txHash,
-        wait: async (confirmations = 1) => {
-          console.log(`Waiting for ${confirmations} confirmations`);
-          // In a real implementation, you would wait for confirmations
-          return { blockNumber: "pending" };
-        }
-      };
-    } catch (error) {
-      console.error("Submit project error:", error);
-      throw error;
+      
+      const count = await contractInterface.getCampaignsCount(provider);
+      logDebug("Got campaign count:", count);
+      setCampaignsCount(count);
+    } catch (err) {
+      console.error("Error fetching campaign count:", err);
+      setError(err.message || "Error fetching campaign count");
+    } finally {
+      setLoadingCount(false);
     }
-  }, [getSigner, isConnected, chainId]);
+  }, [isConnected, getProvider]);
+
+  // Get campaign details by ID
+  const getCampaignDetails = useCallback(async (campaignId) => {
+    try {
+      const provider = getProvider();
+      if (!provider) {
+        throw new Error("Provider not available");
+      }
+      
+      return await contractInterface.getCampaignDetails(provider, campaignId);
+    } catch (err) {
+      console.error(`Error fetching campaign ${campaignId} details:`, err);
+      setError(err.message || "Error fetching campaign details");
+      return null;
+    }
+  }, [getProvider]);
+
+  // Batch get multiple campaigns
+  const batchGetCampaigns = useCallback(async (startId = 0, count = 10) => {
+    try {
+      const provider = getProvider();
+      if (!provider) {
+        throw new Error("Provider not available");
+      }
+      
+      const results = [];
+      const endId = Math.min(startId + count, campaignsCount);
+      
+      for (let i = startId; i < endId; i++) {
+        try {
+          const campaign = await contractInterface.getCampaignDetails(provider, i);
+          if (campaign) {
+            results.push({ ...campaign, id: i });
+          }
+        } catch (e) {
+          console.error(`Error fetching campaign ${i}:`, e);
+        }
+      }
+      
+      return results;
+    } catch (err) {
+      console.error("Error batch fetching campaigns:", err);
+      setError(err.message || "Error batch fetching campaigns");
+      return [];
+    }
+  }, [getProvider, campaignsCount]);
 
   // Create a new campaign
   const createCampaign = useCallback(async (metaUrl, goalAmount, initialRaised = 0) => {
     try {
-      const signer = await getSigner();
-      return contractInterface.createCampaign(signer, metaUrl, goalAmount, initialRaised);
-    } catch (error) {
-      console.error("Create campaign error:", error);
-      throw error;
-    }
-  }, [getSigner]);
-
-  // Add a milestone to an existing campaign
-  const addMilestone = useCallback(async (campaignIndex, amount, description) => {
-    try {
-      const signer = await getSigner();
-      return contractInterface.addMilestone(signer, campaignIndex, amount, description);
-    } catch (error) {
-      console.error("Add milestone error:", error);
-      throw error;
-    }
-  }, [getSigner]);
-
-  // Get campaign details with batch fetching capability
-  const getCampaignDetails = useCallback(async (campaignId) => {
-    if (!publicClient) {
-      throw new Error("Provider not available");
-    }
-    const provider = getProvider();
-    logDebug(`Fetching details for campaign ID ${campaignId} using provider`);
-    return contractInterface.getCampaignDetails(provider, campaignId);
-  }, [getProvider, publicClient, logDebug]);
-  
-  // Batch fetch multiple campaigns at once
-  const batchGetCampaigns = useCallback(async (startId, count) => {
-    if (!publicClient) {
-      throw new Error("Provider not available");
-    }
-    
-    const provider = getProvider();
-    if (!provider) {
-      throw new Error("Provider not available");
-    }
-    
-    // Create an array of promises to fetch campaigns in parallel
-    const promises = [];
-    for (let i = startId; i < startId + count; i++) {
-      promises.push(
-        contractInterface.getCampaignDetails(provider, i)
-          .catch(err => {
-            logDebug(`Error fetching campaign ${i}:`, err.message);
-            return null;
-          })
+      const signer = getSigner();
+      if (!signer) {
+        throw new Error("Signer not available");
+      }
+      
+      const result = await contractInterface.createCampaign(
+        signer,
+        metaUrl,
+        ethers.utils.parseEther(goalAmount.toString()),
+        ethers.utils.parseEther(initialRaised.toString())
       );
+      
+      // Refresh campaign count after successful creation
+      await refreshCampaignCount();
+      
+      return result;
+    } catch (err) {
+      console.error("Error creating campaign:", err);
+      setError(err.message || "Error creating campaign");
+      return null;
     }
-    
-    // Wait for all promises to settle
-    const results = await Promise.allSettled(promises);
-    
-    // Filter out rejections and extract values from fulfilled promises
-    return results
-      .filter(result => result.status === 'fulfilled' && result.value)
-      .map(result => result.value);
-  }, [getProvider, publicClient, logDebug]);
+  }, [getSigner, refreshCampaignCount]);
 
-  // Get milestone details
-  const getMilestoneDetails = useCallback(async (campaignId, milestoneId) => {
-    if (!publicClient) {
-      throw new Error("Provider not available");
+  // Add a milestone to a campaign
+  const addMilestone = useCallback(async (campaignId, amount, description) => {
+    try {
+      const signer = getSigner();
+      if (!signer) {
+        throw new Error("Signer not available");
+      }
+      
+      return await contractInterface.addMilestone(
+        signer,
+        campaignId,
+        ethers.utils.parseEther(amount.toString()),
+        description
+      );
+    } catch (err) {
+      console.error("Error adding milestone:", err);
+      setError(err.message || "Error adding milestone");
+      return null;
     }
-    const provider = getProvider();
-    return contractInterface.getMilestoneDetails(provider, campaignId, milestoneId);
-  }, [getProvider, publicClient]);
+  }, [getSigner]);
 
-  // Get investor details
-  const getInvestorDetails = useCallback(async (investorAddress) => {
-    if (!publicClient) {
-      throw new Error("Provider not available");
+  // Mark a milestone as complete
+  const completeMilestone = useCallback(async (campaignId, milestoneId) => {
+    try {
+      const signer = getSigner();
+      if (!signer) {
+        throw new Error("Signer not available");
+      }
+      
+      return await contractInterface.completeMilestone(signer, campaignId, milestoneId);
+    } catch (err) {
+      console.error("Error completing milestone:", err);
+      setError(err.message || "Error completing milestone");
+      return null;
     }
-    const provider = getProvider();
-    return contractInterface.getInvestorDetails(provider, investorAddress || address);
-  }, [getProvider, publicClient, address]);
+  }, [getSigner]);
 
-  // Donate to a project
+  // Withdraw funds from a milestone
+  const withdrawMilestone = useCallback(async (campaignId, milestoneId) => {
+    try {
+      const signer = getSigner();
+      if (!signer) {
+        throw new Error("Signer not available");
+      }
+      
+      return await contractInterface.withdrawMilestone(signer, campaignId, milestoneId);
+    } catch (err) {
+      console.error("Error withdrawing from milestone:", err);
+      setError(err.message || "Error withdrawing from milestone");
+      return null;
+    }
+  }, [getSigner]);
+
+  // Invest in a campaign
+  const investInCampaign = useCallback(async (campaignId, amount) => {
+    try {
+      const signer = getSigner();
+      if (!signer) {
+        throw new Error("Signer not available");
+      }
+      
+      return await contractInterface.investInCampaign(
+        signer,
+        campaignId,
+        ethers.utils.parseEther(amount.toString())
+      );
+    } catch (err) {
+      console.error("Error investing in campaign:", err);
+      setError(err.message || "Error investing in campaign");
+      return null;
+    }
+  }, [getSigner]);
+
+  // Donate directly to a project
   const donateToProject = useCallback(async (projectId, amount) => {
     try {
-      const signer = await getSigner();
-      return contractInterface.donateToProject(signer, projectId, amount);
-    } catch (error) {
-      console.error("Donate to project error:", error);
-      throw error;
+      const signer = getSigner();
+      if (!signer) {
+        throw new Error("Signer not available");
+      }
+      
+      return await contractInterface.donateToProject(
+        signer,
+        projectId,
+        ethers.utils.parseEther(amount.toString())
+      );
+    } catch (err) {
+      console.error("Error donating to project:", err);
+      setError(err.message || "Error donating to project");
+      return null;
     }
   }, [getSigner]);
 
-  // Add other contract functions...
+  // Project submission wrapper function
+  const submitProject = useCallback(async (projectData) => {
+    try {
+      if (!isConnected) {
+        throw new Error("Wallet not connected");
+      }
+      
+      const signer = getSigner();
+      if (!signer) {
+        throw new Error("Signer not available");
+      }
+      
+      console.log("Submitting project data:", projectData);
+      
+      // Create metadata object that will be stored as JSON
+      const metadata = {
+        name: projectData.name,
+        description: projectData.description,
+        socialLinks: projectData.socialMedia || {},
+        contactInfo: projectData.contactInfo || {},
+        team: projectData.team || { members: [] },
+        stage: projectData.projectStage?.stage || "Seed",
+        businessModel: projectData.projectStage?.businessModel || "",
+        problem: projectData.problem || "",
+        solution: projectData.solution || "",
+        mission: projectData.mission || "",
+        location: projectData.location || "",
+        createdAt: new Date().toISOString()
+      };
+      
+      // For the multi-step form, format the data properly
+      const metaUrl = `ipfs://local/${address}_${Date.now()}`; // This would be replaced with actual IPFS upload
+      const goalAmount = projectData.projectStage?.raisedAmount || "1";
+      
+      // Call the createCampaign function
+      const result = await createCampaign(
+        metaUrl,
+        goalAmount,
+        "0" // Initial raised amount
+      );
+      
+      console.log("Project submitted successfully:", result);
+      return result;
+    } catch (err) {
+      console.error("Error submitting project:", err);
+      throw err;
+    }
+  }, [isConnected, address, getSigner, createCampaign]);
 
-  // Context value with all contract functions
-  const value = {
+  // Context value with all contract methods
+  const contextValue = {
     isConnected,
+    address,
     campaignsCount,
-    loadingCount,
+    isLoading: loadingCount,
     error,
-    chainId,
-    submitProject,
+    
+    // Methods
+    getCampaignDetails,
+    batchGetCampaigns,
     createCampaign,
     addMilestone,
-    getCampaignDetails,
-    getMilestoneDetails,
-    getInvestorDetails,
+    completeMilestone,
+    withdrawMilestone,
+    investInCampaign,
     donateToProject,
-    batchGetCampaigns,
-    // Include all other functions here
-    // ...
+    refreshCampaignCount,
+    submitProject, // Added project submission function
   };
 
   return (
-    <ContractContext.Provider value={value}>
+    <ContractContext.Provider value={contextValue}>
       {children}
     </ContractContext.Provider>
   );
 }
 
-// Hook to use the contract context in components
-export function useContract() {
-  const context = useContext(ContractContext);
-  if (!context) {
-    throw new Error("useContract must be used within a ContractProvider");
-  }
-  return context;
-}
+// Hook for components to get access to the contract context
+export const useContract = () => {
+  return useContext(ContractContext);
+};
