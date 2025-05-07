@@ -42,6 +42,7 @@ import Footer from "@/components/landingPage/Footer";
 import TopNavigation from "./TopNavigation";
 import SearchBar from "./SearchBar";
 import EmptyProjectState from "./EmptyProjectState";
+import MultiStepProjectForm from "../project/MultiStepProjectForm";
 
 type UserRole = "founder" | "investor" | "both";
 type ActiveView = "founder" | "investor";
@@ -78,6 +79,7 @@ const Dashboard = () => {
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   
   // Create a ref to track redirect status at component level, not inside useEffect
   const redirectingRef = useRef(false);
@@ -428,7 +430,18 @@ const Dashboard = () => {
   }
 
   const handleAddProject = () => {
-    setActiveSection("campaigns");
+    setIsProjectFormOpen(true);
+  };
+  
+  const handleCloseProjectForm = () => {
+    setIsProjectFormOpen(false);
+  };
+  
+  const handleProjectSubmit = (data: any) => {
+    console.log("Project submitted:", data);
+    setIsProjectFormOpen(false);
+    // Show success notification
+    addNotification("Project created successfully!", "success");
   };
 
   return (
@@ -533,8 +546,12 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col min-h-screen">
+        {/* Content container */}
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          {/* Project Form Modal */}
+          {isProjectFormOpen && (
+            <MultiStepProjectForm onClose={handleCloseProjectForm} onSubmit={handleProjectSubmit} />
+          )}
           {/* Mobile Header */}
           <header className="border-b border-gray-800 bg-[#0B0B0F] backdrop-blur-md sticky top-0 z-30 w-full lg:hidden">
             <div className="flex items-center justify-between px-4 py-3">
@@ -597,11 +614,11 @@ const Dashboard = () => {
           <TopNavigation walletAddress={address} onSwitchView={() => toggleView(activeView === "founder" ? "investor" : "founder")} />
 
           {/* Content */}
-          <main className="flex-1 bg-white text-black">
+          <main className="flex-1 bg-black text-white">
             {/* Dashboard Content */}
             <div className="p-6">
-              <h1 className="text-2xl font-bold mb-1">Dashboard</h1>
-              <p className="text-gray-500 mb-8">
+              <h1 className="text-2xl font-bold mb-1 text-white">Dashboard</h1>
+              <p className="text-gray-400 mb-8">
                 Explore our curated list of grant programs for innovators and creators: from tech pioneers to community
                 leaders, there is a grant program to elevate your project.
               </p>

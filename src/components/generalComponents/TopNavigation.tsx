@@ -1,7 +1,9 @@
 "use client"
 
 import type React from "react"
+import { useRouter } from "next/navigation"
 import { Sun, Clock8, Bell, Settings } from "lucide-react"
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 import SearchBar from "./SearchBar"
 
 interface TopNavigationProps {
@@ -10,35 +12,85 @@ interface TopNavigationProps {
 }
 
 const TopNavigation: React.FC<TopNavigationProps> = ({ walletAddress, onSwitchView }) => {
-  // Format address for display
-  const formatAddress = (address: string | undefined) => {
-    if (!address) return ""
-    return `${address.slice(0, 6)}...${address.slice(-4)}`
-  }
+  const router = useRouter()
 
   return (
     <>
-      {/* Connected Wallet Address */}
-      <div className="flex justify-end px-6 py-2 bg-white border-b border-gray-100">
-        <div className="text-sm text-gray-600">
-          Connected: <span className="font-medium text-gray-900">{formatAddress(walletAddress)}</span>
-        </div>
+      {/* Connected Wallet Address with RainbowKit */}
+      <div className="flex justify-end items-center px-6 py-2 bg-[#111] border-b border-gray-800">
+        <ConnectButton.Custom>
+          {({
+            account,
+            chain,
+            openAccountModal,
+            openChainModal,
+            openConnectModal,
+            mounted,
+          }) => {
+            const connected = mounted && account && chain
+
+            return (
+              <div
+                {...(!mounted && {
+                  'aria-hidden': true,
+                  style: {
+                    opacity: 0,
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                  },
+                })}
+              >
+                {(() => {
+                  if (!connected) {
+                    return (
+                      <button 
+                        onClick={openConnectModal}
+                        type="button"
+                        className="px-4 py-1.5 rounded-full text-white text-sm font-medium bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB]"
+                      >
+                        Connect Wallet
+                      </button>
+                    )
+                  }
+
+                  return (
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={openChainModal}
+                        className="flex items-center gap-1 px-2.5 py-1.5 text-white rounded-full text-sm bg-gradient-to-r from-[#2F50FF] to-[#6B46C1] hover:opacity-90"
+                      >
+                        {chain.name}
+                      </button>
+
+                      <button
+                        onClick={openAccountModal}
+                        className="flex items-center gap-1 px-2.5 py-1.5 text-white rounded-full text-sm bg-gradient-to-r from-[#FF7171] to-[#9360BB] hover:opacity-90"
+                      >
+                        {account.displayName}
+                      </button>
+                    </div>
+                  )
+                })()}
+              </div>
+            )
+          }}
+        </ConnectButton.Custom>
       </div>
 
       {/* Main Navigation */}
-      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-white">
+      <div className="flex items-center justify-between px-6 py-3 border-b border-gray-800 bg-[#0B0B0F]">
         {/* Search Bar */}
         <SearchBar placeholder="Search" />
 
         {/* Center Controls */}
         <div className="flex items-center space-x-6">
-          <button className="text-gray-500 hover:text-gray-700">
+          <button className="text-gray-400 hover:text-white">
             <Sun className="h-5 w-5" />
           </button>
-          <button className="text-gray-500 hover:text-gray-700">
+          <button className="text-gray-400 hover:text-white">
             <Clock8 className="h-5 w-5" />
           </button>
-          <button className="text-gray-500 hover:text-gray-700 relative">
+          <button className="text-gray-400 hover:text-white relative">
             <Bell className="h-5 w-5" />
             <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
           </button>

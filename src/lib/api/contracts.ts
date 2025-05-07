@@ -34,4 +34,4 @@ export const getContractsByCampaignId = async (campaignId: string): Promise<Cont
   );
   
   return response.data;
-}; 
+};

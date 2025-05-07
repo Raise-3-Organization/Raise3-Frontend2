@@ -1,44 +1,63 @@
 "use client";
 
-import { ReactNode } from 'react';
+import { ReactNode, useState, useEffect } from 'react';
 import { ThemeProvider } from 'next-themes';
-import { createConfig, http, WagmiProvider } from 'wagmi';
-import { mainnet, sepolia, liskSepolia } from 'wagmi/chains';
+import { ContractProvider } from '@/context/ContractContext';
+
+// RainbowKit imports
+import '@rainbow-me/rainbowkit/styles.css';
+import {
+  RainbowKitProvider,
+  darkTheme,
+  lightTheme,
+} from '@rainbow-me/rainbowkit';
+import { WagmiProvider, createConfig, http } from 'wagmi';
+import { type Chain, mainnet, sepolia } from 'wagmi/chains';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { injected, walletConnect } from '@wagmi/connectors';
-import { cookieStorage, createStorage } from '@wagmi/core';
-import { ContractProvider } from '../context/ContractContext';
+import { WalletRedirector } from '@/components/walletConnection/WalletRedirector';
 
-// Set up WalletConnect projectId
-const projectId = '1eebe528ca0ce94a99ceaa2e915058d7';
+// Set up custom theme options for RainbowKit with our brand colors
+const customThemeColors = {
+  accentColor: '#FF7171', // Primary brand color (middle of gradient)
+  accentColorForeground: 'white',
+};
 
-// Create persistent storage with a custom key
-const storage = createStorage({
-  storage: cookieStorage,
-  key: 'raise3-wallet', // Custom key for better isolation
-});
-
-// Create wagmi config with better disconnection handling
-const config = createConfig({
-  chains: [mainnet, sepolia, liskSepolia],
-  transports: {
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
-[liskSepolia.id]: http("https://rpc.sepolia-api.lisk.com"),
+// Custom Lisk Sepolia chain definition
+const liskSepolia: Chain = {
+  id: 4202,
+  name: 'Lisk Sepolia',
+  nativeCurrency: {
+    decimals: 18,
+    name: 'LSK',
+    symbol: 'LSK',
   },
-  connectors: [
-    injected({
-      shimDisconnect: true,
-      // Handle wallets that may not fully implement EIP-1193
-      unstable_shimAsyncInject: true,
+  rpcUrls: {
+    public: { http: ['https://rpc.sepolia-api.lisk.com'] },
+    default: { http: ['https://rpc.sepolia-api.lisk.com'] },
+  },
+  blockExplorers: {
+    default: { name: 'Explorer', url: 'https://sepolia-blockscout.lisk.com/' },
+  },
+  testnet: true,
+};
+
+// Configure chains
+const chains = [mainnet, sepolia, liskSepolia] as const;
+
+// Create wagmi config with RainbowKit v2
+const config = createConfig({
+  chains,
+  transports: {
+    [mainnet.id]: http(mainnet.rpcUrls.default.http[0], {
+      batch: true,
     }),
-    walletConnect({ 
-      projectId,
-      showQrModal: true,
+    [sepolia.id]: http(sepolia.rpcUrls.default.http[0], {
+      batch: true,
     }),
-  ],
-  storage,
-  multiInjectedProviderDiscovery: true,
+    [liskSepolia.id]: http(liskSepolia.rpcUrls.default.http[0], {
+      batch: true,
+    }),
+  },
 });
 
 // Create a client for react-query
@@ -59,15 +78,48 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  const [mounted, setMounted] = useState(false);
+  
+  // Prevent hydration issues with theme detection
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class">
-          <ContractProvider>
-            {children}
-          </ContractProvider>
+          {mounted && (
+            <RainbowKitProvider 
+              appInfo={{
+                appName: 'Raise3 Application',
+              }}
+              theme={{
+                lightMode: lightTheme({
+                  accentColor: '#FF7171',
+                  accentColorForeground: 'white',
+                  borderRadius: 'medium',
+                }),
+                darkMode: darkTheme({
+                  accentColor: '#FF7171',
+                  accentColorForeground: 'white',
+                  borderRadius: 'medium',
+                }),
+              }}
+            >
+              <ContractProvider>
+                <WalletRedirector />
+                {children}
+              </ContractProvider>
+            </RainbowKitProvider>
+          )}
+          {!mounted && (
+            <ContractProvider>
+              {children}
+            </ContractProvider>
+          )}
         </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
-} 
+}
