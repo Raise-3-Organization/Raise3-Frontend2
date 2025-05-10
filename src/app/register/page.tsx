@@ -1,11 +1,11 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { useAccount } from "wagmi";
 import Footer from "@/components/landingPage/Footer";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [selectedRole, setSelectedRole] = useState<string | null>(null);
@@ -38,8 +38,7 @@ export default function RegisterPage() {
         }
       }
       
-      // Mark that the user has at least started registration
-      localStorage.setItem(`userType-${address}`, 'registered');
+      // DON'T mark as registered yet - only do this after role selection is complete
     }
   }, [isConnected, address, step, router]);
 
@@ -66,6 +65,9 @@ export default function RegisterPage() {
     // Store role information with wallet address as key
     if (walletAddress) {
       localStorage.setItem(`userRole-${walletAddress}`, selectedRole);
+      
+      // NOW mark the user as registered after they've selected a role
+      localStorage.setItem(`userType-${walletAddress}`, 'registered');
     }
     
     // Redirect to dashboard
@@ -186,5 +188,26 @@ export default function RegisterPage() {
         <Footer />
       </div>
     </div>
+  );
+}
+
+// Loading fallback component
+function RegisterLoading() {
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-black/60">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-t-4 border-gray-200 border-t-[#FF7171]"></div>
+        <p className="text-white">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Main page component with Suspense
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={<RegisterLoading />}>
+      <RegisterContent />
+    </Suspense>
   );
 } 

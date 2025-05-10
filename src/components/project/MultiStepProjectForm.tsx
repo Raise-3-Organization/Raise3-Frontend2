@@ -121,8 +121,8 @@ const MultiStepProjectForm: React.FC<MultiStepProjectFormProps> = ({ onClose, on
     if (value && !value.match(/^https?:\/\//)) {
       if (name === 'twitter') {
         formattedValue = value.startsWith('@') 
-          ? `https://twitter.com/${value.substring(1)}` 
-          : `https://twitter.com/${value}`;
+          ? `https://x .com/${value.substring(1)}` 
+          : `https://x.com/${value}`;
       } else if (name === 'github') {
         formattedValue = `https://github.com/${value}`;
       } else if (name === 'discord') {

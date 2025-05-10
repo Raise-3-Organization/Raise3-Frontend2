@@ -118,15 +118,18 @@ const Dashboard = () => {
             // Simulate API call delay
             await new Promise(resolve => setTimeout(resolve, 800));
             
-            // Simulate unregistered user (first-time visitor)
-            const isRegistered = localStorage.getItem(`user-registered-${address}`);
+            // Check if user is registered - use the same key pattern as WalletRedirector
+            const isRegistered = localStorage.getItem(`userType-${address}`);
+            const savedRole = localStorage.getItem(`userRole-${address}`);
             
-            if (!isRegistered) {
+            if (!isRegistered && !savedRole) {
               setUserRole(null);
               setIsRegistrationModalOpen(true);
             } else {
-              const savedRole = localStorage.getItem(`user-role-${address}`) as UserRole;
-              setUserRole(savedRole || "both");
+              // Convert role string format to match our expected types
+              const roleValue = savedRole?.toLowerCase() as UserRole || "both";
+              setUserRole(roleValue);
+              // Keep track of active view preference separately
               setActiveView(localStorage.getItem(`user-active-view-${address}`) as ActiveView || "founder");
             }
           } catch (error) {
@@ -148,18 +151,14 @@ const Dashboard = () => {
 
   // Handle role selection during registration
   const handleRoleSelection = (role: UserRole) => {
-    setUserRole(role);
-    localStorage.setItem(`user-role-${address}`, role);
-    localStorage.setItem(`user-registered-${address}`, "true");
+    // Store selected role - use the same key pattern as WalletRedirector
+    localStorage.setItem(`userRole-${address}`, role);
+    localStorage.setItem(`userType-${address}`, 'registered');
     
-    // Set default active view based on role
-    let view: ActiveView = "founder";
-    if (role === "investor") {
-      view = "investor";
-    }
-    
-    setActiveView(view);
-    localStorage.setItem(`user-active-view-${address}`, view);
+    // Initialize active view based on role
+    const defaultView: ActiveView = (role === "investor") ? "investor" : "founder";
+    localStorage.setItem(`user-active-view-${address}`, defaultView);
+    setActiveView(defaultView);
     setIsRegistrationModalOpen(false);
   };
 
