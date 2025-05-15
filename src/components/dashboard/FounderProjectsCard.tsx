@@ -10,7 +10,7 @@ interface ProjectId {
   id: string;
 }
 
-const FounderProjectsCard = ({ id }: ProjectId) => {
+const FounderProjectsCard = ({ id }: ProjectId): React.JSX.Element => {
 
 
   const { projects, isProjectLoading } = useReadProjects(id)

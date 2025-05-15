@@ -21,23 +21,23 @@ const AppWrapper = ({ children }: AppWrapperProps) => {
       const isRegistered = localStorage.getItem(`user-registered-${address}`);
       
       // If on login page and already registered, redirect to dashboard
-      if (pathname === "/login" && isRegistered) {
-        router.push("/dashboard");
-        return;
-      }
+      // if (pathname === "/login" && isRegistered) {
+      //   router.push("/dashboard");
+      //   return;
+      // }
       
       // If not registered and not already on login page, show registration
-      if (!isRegistered && pathname !== "/login") {
-        // Check if we're already showing registration or if we're on a specific page that doesn't need it
-        if (!showRegistration && pathname !== "/" && !pathname.startsWith("/#")) {
-          setShowRegistration(true);
-        }
-      }
+      // if (!isRegistered && pathname !== "/login") {
+      //   // Check if we're already showing registration or if we're on a specific page that doesn't need it
+      //   if (!showRegistration && pathname !== "/" && !pathname.startsWith("/#")) {
+      //     setShowRegistration(true);
+      //   }
+      // }
     } else {
       // If not connected and trying to access dashboard, redirect to login
-      if (pathname === "/dashboard") {
-        router.push("/login");
-      }
+      // if (pathname === "/dashboard") {
+      //   router.push("/login");
+      // }
     }
   }, [isConnected, pathname, router, address, showRegistration]);
 
@@ -46,9 +46,9 @@ const AppWrapper = ({ children }: AppWrapperProps) => {
     setShowRegistration(false);
     
     // If on home page, stay there, otherwise go to dashboard
-    if (pathname !== "/") {
-      router.push("/dashboard");
-    }
+    // if (pathname !== "/") {
+    //   router.push("/dashboard");
+    // }
   };
 
   return (

@@ -32,12 +32,15 @@ export const useProjectDetails = (projects: any[]) => {
         } catch (error) {
             console.error('Error fetching project details:', error);
         }
-    }, [project]);
+    }, [project?.metaURL]);
+
+    useEffect(() => {
+        fetchProjectDetails();
+    }, [ fetchProjectDetails]);
 
     useEffect(() => {
         formatProject();
-        fetchProjectDetails();
-    }, [formatProject, fetchProjectDetails]);
+    }, [formatProject]);
 
     return { project, projectDetails };
 };

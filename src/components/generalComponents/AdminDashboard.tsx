@@ -11,7 +11,6 @@ import {
   ChevronRight,
   ArrowUpRight,
   PlusCircle,
-  Search,
   Flag,
   CheckCircle,
   X,
@@ -20,7 +19,6 @@ import {
   LogOut
 } from "lucide-react";
 import { useAccount } from "wagmi";
-import { motion } from "framer-motion";
 import AdminProjectsList from "./admin/AdminProjectsList";
 import AdminFlaggedProjects from "./admin/AdminFlaggedProjects";
 import AdminUsersList from "./admin/AdminUsersList";

@@ -108,7 +108,7 @@ export function Providers({ children }: ProvidersProps) {
               }}
             >
               <ContractProvider>
-                <WalletRedirector />
+                {/* <WalletRedirector /> */}
                 {children}
               </ContractProvider>
             </RainbowKitProvider>

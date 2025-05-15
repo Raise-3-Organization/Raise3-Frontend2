@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Search, Filter, ChevronDown, Flag, Eye, CheckCircle } from "lucide-react";
 import { useAdminDashboard } from "../AdminDashboard";
-
+import AdminProjectList from "./AdminProjectList";
 // This would come from your API in a real implementation
 const projectsData = [
   {
@@ -160,7 +160,7 @@ const AdminProjectsList = () => {
                 <th className="pb-3 text-left text-sm font-medium text-gray-400 px-4">Actions</th>
               </tr>
             </thead>
-            <tbody>
+            {/* <tbody>
               {filteredProjects.map((project) => (
                 <tr key={project.id} className="border-b border-gray-800">
                   <td className="py-4 px-4">
@@ -221,7 +221,8 @@ const AdminProjectsList = () => {
                   </td>
                 </tr>
               ))}
-            </tbody>
+            </tbody> */}
+            <AdminProjectList />
           </table>
         </div>
         

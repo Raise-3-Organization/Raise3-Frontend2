@@ -17,6 +17,12 @@ export const useRoles = (address: string) => {
         functionName: 'hasRole',
         args: [CONTRACT_ROLE.INVESTOR_ROLE, address],
     });
+    const { data: isManagerRole, isLoading: isManagerLoading, error: managerError } = useReadContract({
+        address: contractAddress,
+        abi: Raise3Abi,
+        functionName: 'hasRole',
+        args: [CONTRACT_ROLE.MANAGER_ROLE, address],
+    });
 
-    return {isFounderRole, isInvestorRole, isInvestorLoading, investorError}
+    return {isFounderRole, isInvestorRole, isInvestorLoading, investorError, isManagerLoading, isManagerRole}
 } 
