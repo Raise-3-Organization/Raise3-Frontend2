@@ -427,6 +427,15 @@ const Dashboard = () => {
         return <InvestorDashboard />;
     }
   };
+  
+  // Load dashboard content based on role
+  const renderContent = () => {
+    if (activeView === "founder") {
+      return renderFounderContent();
+    } else {
+      return renderInvestorContent();
+    }
+  };
 
   // Create Dashboard context value
   const dashboardContextValue = {
