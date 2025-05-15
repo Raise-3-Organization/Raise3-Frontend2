@@ -96,10 +96,7 @@ const AdminProjectsList = () => {
   });
   
   // Handle flagging a project
-  const handleFlagProject = (projectId: string) => {
-    // In a real implementation, you would call an API to flag the project
-    alert(`Project ${projectId} has been flagged for review.`);
-  };
+ 
   
   return (
     <div className="space-y-6">
