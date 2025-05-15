@@ -268,7 +268,7 @@ const Dashboard = () => {
           label: "Notifications",
           active: activeSection === "notifications",
         },
-      ]
+      ];
     } else {
       return [
         {
@@ -398,6 +398,15 @@ const Dashboard = () => {
         return <InvestorSettings />;
       default:
         return <InvestorDashboard />;
+    }
+  };
+  
+  // Load dashboard content based on role
+  const renderContent = () => {
+    if (activeView === "founder") {
+      return renderFounderContent();
+    } else {
+      return renderInvestorContent();
     }
   };
 
