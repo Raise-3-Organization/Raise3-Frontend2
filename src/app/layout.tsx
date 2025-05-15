@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Krona_One } from "next/font/google";
-import { Providers } from "./providers";
+import { Providers } from "../provider/providers";
 import "./globals.css";
 import { ThemeProvider } from "@/components/generalComponents/theme-provider";
 

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-import { useRouter } from "next/navigation"
 import { Sun, Clock8, Bell, Settings } from "lucide-react"
 import { ConnectButton } from '@rainbow-me/rainbowkit'
 import SearchBar from "./SearchBar"
@@ -12,7 +11,6 @@ interface TopNavigationProps {
 }
 
 const TopNavigation: React.FC<TopNavigationProps> = ({ walletAddress, onSwitchView }) => {
-  const router = useRouter()
 
   return (
     <>

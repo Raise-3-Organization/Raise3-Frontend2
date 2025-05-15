@@ -1,18 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, createContext, useRef } from "react";
+import React, { useState, useEffect, createContext, useRef, useContext } from "react";
 import { useAccount } from "wagmi";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { 
-  LayoutDashboard, 
-  Rocket, 
-  LineChart, 
-  FileText, 
-  Clock, 
-  Users, 
-  Briefcase, 
+import {
+  LayoutDashboard,
+  Rocket,
+  LineChart,
+  FileText,
+  Clock,
+  Users,
+  Briefcase,
   Settings,
   ChevronRight,
   BarChart3,
@@ -34,7 +34,6 @@ import { useTheme } from "next-themes";
 import ProjectList from '../ProjectList';
 import ProjectActions from '../ProjectActions';
 import TransactionNotification, { useTransactionNotification } from '../TransactionNotification';
-import { v4 as uuidv4 } from 'uuid';
 import { useContract } from "@/context/ContractContext";
 import { ethers } from "ethers";
 import ContractInitializer from '../ContractInitializer';
@@ -43,7 +42,10 @@ import TopNavigation from "./TopNavigation";
 import SearchBar from "./SearchBar";
 import EmptyProjectState from "./EmptyProjectState";
 import MultiStepProjectForm from "../project/MultiStepProjectForm";
-
+import FounderProjects from "../dashboard/FounderProjects";
+import { useRoles } from "@/hooks/useRoles";
+import BrowseProjects from "../dashboard/BrowseProjects";
+import FounderDashboard from "../dashboard/FounderDashBoard";
 type UserRole = "founder" | "investor" | "both";
 type ActiveView = "founder" | "investor";
 
@@ -60,12 +62,12 @@ interface DashboardContextProps {
 
 export const DashboardContext = createContext<DashboardContextProps>({
   activeSection: "dashboard",
-  setActiveSection: () => {},
+  setActiveSection: () => { },
   activeView: "founder",
-  setActiveView: () => {},
+  setActiveView: () => { },
   addNotification: () => "",
-  removeNotification: () => {},
-  updateNotification: () => {},
+  removeNotification: () => { },
+  updateNotification: () => { },
 });
 
 const Dashboard = () => {
@@ -73,88 +75,94 @@ const Dashboard = () => {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("founder");
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
-  
+  const { isFounderRole, isInvestorRole } = useRoles(address || '');
+
+
   // Create a ref to track redirect status at component level, not inside useEffect
   const redirectingRef = useRef(false);
-  
+
   // Import notification utilities
-  const { 
-    notifications, 
-    addNotification, 
-    removeNotification, 
-    updateNotification 
+  const {
+    notifications,
+    addNotification,
+    removeNotification,
+    updateNotification
   } = useTransactionNotification();
 
-  // Check if user is connected and registered
   useEffect(() => {
     setMounted(true);
-    
-    // Only perform checks if component is mounted
-    if (!mounted) return;
-    
-    // No need to re-declare redirectingRef here since we're using the component level one
-    
-    const checkConnection = async () => {
-      // Only redirect if we're sure the user isn't connected
-      // This prevents flickering during wallet connection
-      if (!isConnected && mounted && !redirectingRef.current) {
-        console.log("User not connected, redirecting to login");
-        redirectingRef.current = true;
-        router.push("/login");
-        return;
-      }
-      
-      if (isConnected && mounted) {
-        // Simulate getting user role from API/database
-        const fetchUserRole = async () => {
-          try {
-            // Simulate API call delay
-            await new Promise(resolve => setTimeout(resolve, 800));
-            
-            // Check if user is registered - use the same key pattern as WalletRedirector
-            const isRegistered = localStorage.getItem(`userType-${address}`);
-            const savedRole = localStorage.getItem(`userRole-${address}`);
-            
-            if (!isRegistered && !savedRole) {
-              setUserRole(null);
-              setIsRegistrationModalOpen(true);
-            } else {
-              // Convert role string format to match our expected types
-              const roleValue = savedRole?.toLowerCase() as UserRole || "both";
-              setUserRole(roleValue);
-              // Keep track of active view preference separately
-              setActiveView(localStorage.getItem(`user-active-view-${address}`) as ActiveView || "founder");
-            }
-          } catch (error) {
-            console.error("Error fetching user role:", error);
-          } finally {
-            setIsLoading(false);
-          }
-        };
+  }, []);
 
-        fetchUserRole();
-      }
-    };
-    
-    checkConnection();
-    
-    // Only add isConnected to dependency array
-    // We don't want to re-run this on router or address changes
-  }, [isConnected, mounted, router, address]);
+  // Check if user is connected and registered
+  // useEffect(() => {
+  //   setMounted(true);
+
+  //   // Only perform checks if component is mounted
+  //   if (!mounted) return;
+
+  //   // No need to re-declare redirectingRef here since we're using the component level one
+
+  //   const checkConnection = async () => {
+  //     // Only redirect if we're sure the user isn't connected
+  //     // This prevents flickering during wallet connection
+  //     if (!isConnected && mounted && !redirectingRef.current) {
+  //       console.log("User not connected, redirecting to login");
+  //       redirectingRef.current = true;
+  //       router.push("/");
+  //       return;
+  //     }
+
+  //     if (isConnected && mounted) {
+  //       // Simulate getting user role from API/database
+  //       const fetchUserRole = async () => {
+  //         try {
+  //           // Simulate API call delay
+  //           await new Promise(resolve => setTimeout(resolve, 800));
+
+  //           // Check if user is registered - use the same key pattern as WalletRedirector
+  //           const isRegistered = localStorage.getItem(`userType-${address}`);
+  //           const savedRole = localStorage.getItem(`userRole-${address}`);
+
+  //           if (!isRegistered && !savedRole) {
+  //             setUserRole(null);
+  //             setIsRegistrationModalOpen(true);
+  //           } else {
+  //             // Convert role string format to match our expected types
+  //             const roleValue = savedRole?.toLowerCase() as UserRole || "both";
+  //             setUserRole(roleValue);
+  //             // Keep track of active view preference separately
+  //             setActiveView(localStorage.getItem(`user-active-view-${address}`) as ActiveView || "founder");
+  //           }
+  //         } catch (error) {
+  //           console.error("Error fetching user role:", error);
+  //         } finally {
+  //           setIsLoading(false);
+  //         }
+  //       };
+
+  //       fetchUserRole();
+  //     }
+  //   };
+
+  //   checkConnection();
+
+  //   // Only add isConnected to dependency array
+  //   // We don't want to re-run this on router or address changes
+  // }, [isConnected, mounted, router, address]);
 
   // Handle role selection during registration
   const handleRoleSelection = (role: UserRole) => {
     // Store selected role - use the same key pattern as WalletRedirector
     localStorage.setItem(`userRole-${address}`, role);
     localStorage.setItem(`userType-${address}`, 'registered');
-    
+
     // Initialize active view based on role
     const defaultView: ActiveView = (role === "investor") ? "investor" : "founder";
     localStorage.setItem(`user-active-view-${address}`, defaultView);
@@ -168,11 +176,6 @@ const Dashboard = () => {
     localStorage.setItem(`user-active-view-${address}`, view);
   };
 
-  // Format address for display
-  const formatAddress = (address: string | undefined) => {
-    if (!address) return "";
-    return `${address.slice(0, 6)}...${address.slice(-4)}`;
-  };
 
   // Toggle theme
   const toggleTheme = () => {
@@ -180,10 +183,10 @@ const Dashboard = () => {
   };
 
   // Logout function
-  const handleLogout = () => {
-    localStorage.removeItem(`user-active-view-${address}`);
-    router.push("/login");
-  };
+  // const handleLogout = () => {
+  //   localStorage.removeItem(`user-active-view-${address}`);
+  //   router.push("/login");
+  // };
 
   // Registration Modal Component
   const RegistrationModal = () => (
@@ -193,7 +196,7 @@ const Dashboard = () => {
         <p className="text-gray-300 mb-8 text-center text-sm font-krona">
           Choose how you want to participate in the Raise3 platform
         </p>
-        
+
         <div className="space-y-4">
           <motion.button
             onClick={() => handleRoleSelection("founder")}
@@ -211,7 +214,7 @@ const Dashboard = () => {
             </div>
             <ChevronRight className="text-[#FF7171]" />
           </motion.button>
-          
+
           <motion.button
             onClick={() => handleRoleSelection("investor")}
             className="w-full p-4 border border-gray-600 rounded-xl bg-[#111]/80 backdrop-blur-sm hover:border-[#FF7171] transition flex items-center justify-between"
@@ -228,7 +231,7 @@ const Dashboard = () => {
             </div>
             <ChevronRight className="text-[#FF7171]" />
           </motion.button>
-          
+
           <motion.button
             onClick={() => handleRoleSelection("both")}
             className="w-full p-4 border border-gray-600 rounded-xl bg-[#111]/80 backdrop-blur-sm hover:border-[#FF7171] transition flex items-center justify-between"
@@ -259,16 +262,30 @@ const Dashboard = () => {
           icon: <LayoutDashboard size={20} />,
           label: "Dashboard",
           active: activeSection === "dashboard",
+          onClick: () => setActiveSection("dashboard"),
         },
-        { id: "campaigns", icon: <Rocket size={20} />, label: "My Campaigns", active: activeSection === "campaigns" },
-        { id: "messages", icon: <FileText size={20} />, label: "Messages", active: activeSection === "messages" },
+        {
+          id: "campaigns",
+          icon: <Rocket size={20} />,
+          label: "My Campaigns",
+          active: activeSection === "campaigns",
+          onClick: () => setActiveSection("campaigns"),
+        },
+        {
+          id: "messages",
+          icon: <FileText size={20} />,
+          label: "Messages",
+          active: activeSection === "messages",
+          onClick: () => setActiveSection("messages"),
+        },
         {
           id: "notifications",
           icon: <Bell size={20} />,
           label: "Notifications",
           active: activeSection === "notifications",
+          onClick: () => setActiveSection("notifications"),
         },
-      ]
+      ];
     } else {
       return [
         {
@@ -276,42 +293,51 @@ const Dashboard = () => {
           icon: <LayoutDashboard size={20} />,
           label: "Dashboard",
           active: activeSection === "dashboard",
+          onClick: () => setActiveSection("dashboard"),
         },
         {
           id: "investments",
           icon: <Briefcase size={20} />,
           label: "Investments",
           active: activeSection === "investments",
+          onClick: () => setActiveSection("investments"),
         },
         {
           id: "browse-projects",
           icon: <Rocket size={20} />,
           label: "Browse Projects",
           active: activeSection === "browse-projects",
+          onClick: () => {
+            console.log("browse project");
+            setActiveSection("browse-projects")
+          },
         },
         {
           id: "performance",
           icon: <BarChart3 size={20} />,
           label: "Performance",
           active: activeSection === "performance",
+          onClick: () => setActiveSection("performance"),
         },
-        { 
-          id: "wallet", 
-          icon: <Wallet size={20} />, 
-          label: "Wallet", 
+        {
+          id: "wallet",
+          icon: <Wallet size={20} />,
+          label: "Wallet",
           active: activeSection === "wallet",
+          onClick: () => setActiveSection("wallet"),
           subItems: [
-            { 
-              id: "settings", 
-              icon: <Settings size={20} />, 
-              label: "Settings", 
-              active: activeSection === "settings" 
-            }
-          ]
+            {
+              id: "settings",
+              icon: <Settings size={20} />,
+              label: "Settings",
+              active: activeSection === "settings",
+              onClick: () => setActiveSection("settings"),
+            },
+          ],
         },
-      ]
+      ];
     }
-  }
+  };
 
   // Helper function to get dashboard title
   const getDashboardTitle = () => {
@@ -369,7 +395,7 @@ const Dashboard = () => {
       case "campaigns":
         return <FounderProjects />;
       case "create-project":
-        return <ContractInitializer><CreateProject /></ContractInitializer>;
+        return <CreateProject />;
       case "milestones":
         return <FounderMilestones />;
       case "investors":
@@ -389,7 +415,8 @@ const Dashboard = () => {
       case "investments":
         return <InvestorInvestments />;
       case "browse-projects":
-        return <ContractInitializer><BrowseProjects /></ContractInitializer>;
+        return <BrowseProjects />
+      // return <ContractInitializer><BrowseProjects /></ContractInitializer>;
       case "performance":
         return <InvestmentPerformance />;
       case "wallet":
@@ -431,11 +458,11 @@ const Dashboard = () => {
   const handleAddProject = () => {
     setIsProjectFormOpen(true);
   };
-  
+
   const handleCloseProjectForm = () => {
     setIsProjectFormOpen(false);
   };
-  
+
   const handleProjectSubmit = (data: any) => {
     console.log("Project submitted:", data);
     setIsProjectFormOpen(false);
@@ -455,19 +482,18 @@ const Dashboard = () => {
               <span className="text-xl font-bold">Raise3</span>
             </div>
           </div>
-          
+
           {/* Navigation */}
           <nav className="flex-1 p-4">
             <ul className="space-y-1">
               {getNavItems().map((item) => (
                 <li key={item.id}>
                   <button
-                    onClick={() => setActiveSection(item.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                      item.active
+                    onClick={item.onClick}
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${item.active
                         ? "bg-[#181818] text-white font-medium"
                         : "text-gray-400 hover:bg-[#181818] hover:text-white"
-                    }`}
+                      }`}
                   >
                     <span className={item.active ? "text-[#FF7171]" : ""}>{item.icon}</span>
                     <span>{item.label}</span>
@@ -477,12 +503,11 @@ const Dashboard = () => {
                       {item.subItems.map((subItem) => (
                         <li key={subItem.id}>
                           <button
-                            onClick={() => setActiveSection(subItem.id)}
-                            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors ${
-                              subItem.active
+                            onClick={subItem.onClick}
+                            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-lg transition-colors ${subItem.active
                                 ? "bg-[#181818] text-white font-medium"
                                 : "text-gray-400 hover:bg-[#181818] hover:text-white"
-                            }`}
+                              }`}
                           >
                             <span className={subItem.active ? "text-[#FF7171]" : ""}>{subItem.icon}</span>
                             <span>{subItem.label}</span>
@@ -509,15 +534,15 @@ const Dashboard = () => {
                     <Image src="/Subtract.png" alt="Raise3 Logo" width={28} height={28} />
                     <span className="text-xl font-bold">Raise3</span>
                   </div>
-                  <button 
-                    className="text-gray-400 hover:text-white" 
+                  <button
+                    className="text-gray-400 hover:text-white"
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     <X size={20} />
                   </button>
                 </div>
               </div>
-              
+
               {/* Navigation */}
               <nav className="p-4">
                 <ul className="space-y-1">
@@ -528,11 +553,10 @@ const Dashboard = () => {
                           setActiveSection(item.id);
                           setIsMobileMenuOpen(false);
                         }}
-                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                          item.active
+                        className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${item.active
                             ? "bg-[#181818] text-white font-medium"
                             : "text-gray-400 hover:bg-[#181818] hover:text-white"
-                        }`}
+                          }`}
                       >
                         <span className={item.active ? "text-[#FF7171]" : ""}>{item.icon}</span>
                         <span>{item.label}</span>
@@ -556,8 +580,8 @@ const Dashboard = () => {
             <div className="flex items-center justify-between px-4 py-3">
               {/* Logo and mobile menu button */}
               <div className="flex items-center gap-3">
-                <button 
-                  className="text-gray-400 hover:text-white" 
+                <button
+                  className="text-gray-400 hover:text-white"
                   onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 >
                   <Menu size={22} />
@@ -567,7 +591,7 @@ const Dashboard = () => {
                   <span className="text-lg font-bold">Raise3</span>
                 </div>
               </div>
-              
+
               {/* Header Controls */}
               <div className="flex items-center space-x-3">
                 <button
@@ -586,21 +610,19 @@ const Dashboard = () => {
                 <div className="flex rounded-lg bg-[#111] overflow-hidden">
                   <button
                     onClick={() => toggleView("founder")}
-                    className={`px-4 py-2 text-sm font-medium ${
-                      activeView === "founder" 
-                        ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white" 
+                    className={`px-4 py-2 text-sm font-medium ${activeView === "founder"
+                        ? "bg-gradient-to-r from-[#FF7171] to-[#FF4E4E] text-white"
                         : "text-gray-400 hover:text-white"
-                    }`}
+                      }`}
                   >
                     Founder
                   </button>
                   <button
                     onClick={() => toggleView("investor")}
-                    className={`px-4 py-2 text-sm font-medium ${
-                      activeView === "investor" 
-                        ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white" 
+                    className={`px-4 py-2 text-sm font-medium ${activeView === "investor"
+                        ? "bg-gradient-to-r from-[#2F50FF] to-[#1E3FD8] text-white"
                         : "text-gray-400 hover:text-white"
-                    }`}
+                      }`}
                   >
                     Investor
                   </button>
@@ -615,16 +637,17 @@ const Dashboard = () => {
           {/* Content */}
           <main className="flex-1 bg-black text-white">
             {/* Dashboard Content */}
-            <div className="p-6">
+            {/* <div className="p-6">
               <h1 className="text-2xl font-bold mb-1 text-white">Dashboard</h1>
               <p className="text-gray-400 mb-8">
                 Explore our curated list of grant programs for innovators and creators: from tech pioneers to community
                 leaders, there is a grant program to elevate your project.
               </p>
 
-              {/* Empty State */}
+             
               <EmptyProjectState walletAddress={address} onAddProject={handleAddProject} />
-            </div>
+            </div> */}
+            {activeView === "founder" ? renderFounderContent() : renderInvestorContent()}
           </main>
 
           {/* Footer */}
@@ -638,244 +661,15 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;
 
-// Founder Dashboard Components
-const FounderDashboard = () => {
-  const { address } = useAccount();
-  const { activeSection, setActiveSection } = useContext(DashboardContext);
-  
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {/* Main stats */}
-      <div className="lg:col-span-2">
-        <div className="bg-black border border-gray-800 rounded-xl p-6">
-          <h2 className="text-xl font-medium mb-6">Project Overview</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="bg-[#111] rounded-xl p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Active Projects</span>
-                <div className="w-8 h-8 rounded-full bg-green-900/30 flex items-center justify-center">
-                  <Rocket size={16} className="text-green-500" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold">3</div>
-              <div className="text-xs text-green-500 mt-1 flex items-center">
-                <ArrowUpRight size={12} />
-                <span className="ml-1">+2 this month</span>
-              </div>
-            </div>
-            
-            <div className="bg-[#111] rounded-xl p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Total Raised</span>
-                <div className="w-8 h-8 rounded-full bg-blue-900/30 flex items-center justify-center">
-                  <LineChart size={16} className="text-blue-500" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold">$150,000</div>
-              <div className="text-xs text-green-500 mt-1 flex items-center">
-                <ArrowUpRight size={12} />
-                <span className="ml-1">+$25,000 this month</span>
-              </div>
-            </div>
-            
-            <div className="bg-[#111] rounded-xl p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-400">Milestones</span>
-                <div className="w-8 h-8 rounded-full bg-purple-900/30 flex items-center justify-center">
-                  <CheckCircle size={16} className="text-purple-500" />
-                </div>
-              </div>
-              <div className="text-2xl font-bold">12 / 20</div>
-              <div className="text-xs text-green-500 mt-1 flex items-center">
-                <ArrowUpRight size={12} />
-                <span className="ml-1">2 completed recently</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Quick actions */}
-      <div className="bg-black border border-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-medium mb-6">Quick Actions</h2>
-        <div className="space-y-3">
-          <button 
-            onClick={() => setActiveSection("create-project")}
-            className="w-full flex items-center justify-between p-4 bg-[#111] rounded-xl hover:bg-[#1a1a1a] transition-colors"
-          >
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#2F50FF] to-[#FF7171] flex items-center justify-center">
-                <PlusCircle size={16} className="text-white" />
-              </div>
-              <span className="ml-3 font-medium">Create New Project</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-500" />
-          </button>
-          
-          <button 
-            onClick={() => setActiveSection("milestones")}
-            className="w-full flex items-center justify-between p-4 bg-[#111] rounded-xl hover:bg-[#1a1a1a] transition-colors"
-          >
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center">
-                <Clock size={16} className="text-[#FF7171]" />
-              </div>
-              <span className="ml-3 font-medium">Update Milestones</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-500" />
-          </button>
-          
-          <button
-            onClick={() => setActiveSection("investors")}
-            className="w-full flex items-center justify-between p-4 bg-[#111] rounded-xl hover:bg-[#1a1a1a] transition-colors"
-          >
-            <div className="flex items-center">
-              <div className="w-8 h-8 rounded-full bg-[#1a1a1a] flex items-center justify-center">
-                <Users size={16} className="text-[#FF7171]" />
-              </div>
-              <span className="ml-3 font-medium">View Investors</span>
-            </div>
-            <ChevronRight size={18} className="text-gray-500" />
-          </button>
-        </div>
-      </div>
-      
-      {/* My Projects section */}
-      <div className="lg:col-span-3">
-        <div className="bg-black border border-gray-800 rounded-xl p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-medium">My Projects</h2>
-            <button 
-              onClick={() => setActiveSection("projects")}
-              className="text-[#FF7171] text-sm flex items-center gap-1 hover:underline"
-            >
-              View all <ChevronRight size={16} />
-            </button>
-          </div>
-          
-          {/* Blockchain Projects */}
-          <div className="mb-6">
-            <h3 className="text-lg font-medium mb-4">Blockchain Projects</h3>
-            <ContractInitializer>
-              <ProjectList filterByFounder={address || undefined} />
-            </ContractInitializer>
-          </div>
-          
-          {/* Static demo projects */}
-          <div className="space-y-4 mt-8">
-            <h3 className="text-lg font-medium mb-4">Demo Projects</h3>
-            <div className="border border-gray-800 rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="font-medium">Decentralized Exchange Protocol</h3>
-                  <p className="text-sm text-gray-400 mt-1">DeFi • Ethereum</p>
-                </div>
-                <div className="bg-green-900/30 text-green-500 text-xs px-2 py-1 rounded-full">
-                  Active
-                </div>
-              </div>
-              <div className="mt-4">
-                <div className="flex justify-between text-sm mb-1">
-                  <span className="text-gray-400">Progress</span>
-                  <span className="font-medium">75%</span>
-                </div>
-                <div className="w-full bg-gray-800 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-[#2F50FF] to-[#FF7171] h-2 rounded-full" style={{ width: "75%" }}></div>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-between items-center text-sm">
-                <span className="text-gray-400">$90,000 raised of $120,000</span>
-                <button className="text-[#FF7171] font-medium hover:underline">Manage</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}; 
 
 // Other Founder Components
-const FounderProjects = () => {
-  // Get the user's address to filter projects
-  const { address } = useAccount();
-  const { setActiveSection } = useContext(DashboardContext);
-  
-  return (
-    <div className="space-y-6">
-      {/* Real blockchain projects */}
-      <div className="bg-black border border-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-medium mb-6">My Blockchain Projects</h2>
-        <ContractInitializer>
-          <ProjectList filterByFounder={address || undefined} />
-        </ContractInitializer>
-      </div>
-      
-      {/* Demo projects */}
-      <div className="bg-black border border-gray-800 rounded-xl p-6">
-        <h2 className="text-xl font-medium mb-6">Demo Projects</h2>
-        <div className="space-y-4">
-          <div className="border border-gray-800 rounded-lg p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-medium">Decentralized Exchange Protocol</h3>
-                <p className="text-sm text-gray-400 mt-1">DeFi • Ethereum</p>
-              </div>
-              <div className="bg-green-900/30 text-green-500 text-xs px-2 py-1 rounded-full">
-                Active
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-400">Progress</span>
-                <span className="font-medium">75%</span>
-              </div>
-              <div className="w-full bg-gray-800 rounded-full h-2">
-                <div className="bg-gradient-to-r from-[#2F50FF] to-[#FF7171] h-2 rounded-full" style={{ width: "75%" }}></div>
-              </div>
-            </div>
-            <div className="mt-4 flex justify-between items-center text-sm">
-              <span className="text-gray-400">$90,000 raised of $120,000</span>
-              <button className="text-[#FF7171] font-medium hover:underline">Manage</button>
-            </div>
-          </div>
-          
-          <div className="border border-gray-800 rounded-lg p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-medium">Web3 Social Platform</h3>
-                <p className="text-sm text-gray-400 mt-1">Social • Polygon</p>
-              </div>
-              <div className="bg-yellow-900/30 text-yellow-500 text-xs px-2 py-1 rounded-full">
-                Pending KYC
-              </div>
-            </div>
-            <div className="mt-4">
-              <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-400">Progress</span>
-                <span className="font-medium">0%</span>
-              </div>
-              <div className="w-full bg-gray-800 rounded-full h-2">
-                <div className="bg-gradient-to-r from-[#2F50FF] to-[#FF7171] h-2 rounded-full" style={{ width: "0%" }}></div>
-              </div>
-            </div>
-            <div className="mt-4 flex justify-between items-center text-sm">
-              <span className="text-gray-400">Complete KYC to publish</span>
-              <button className="text-[#FF7171] font-medium hover:underline">Complete KYC</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 const CreateProject = () => (
   <div className="bg-black border border-gray-800 rounded-xl p-6">
     <h2 className="text-xl font-medium mb-6">Create a New Project</h2>
-    
+
     {/* Smart Contract Integrated Project Creation */}
     <ProjectActions />
   </div>
@@ -884,7 +678,7 @@ const CreateProject = () => (
 const FounderMilestones = () => (
   <div className="bg-black border border-gray-800 rounded-xl p-6">
     <h2 className="text-xl font-medium mb-6">Project Milestones</h2>
-    
+
     <div className="mb-6">
       <label className="block text-sm font-medium mb-2">Select Project</label>
       <select className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none">
@@ -892,7 +686,7 @@ const FounderMilestones = () => (
         <option value="social">Web3 Social Platform</option>
       </select>
     </div>
-    
+
     <div className="space-y-6">
       <div className="border border-gray-800 rounded-lg p-4">
         <div className="flex justify-between items-start">
@@ -931,7 +725,7 @@ const FounderMilestones = () => (
           </div>
         </div>
       </div>
-      
+
       <div className="border border-gray-800 rounded-lg p-4">
         <div className="flex justify-between items-start">
           <div>
@@ -948,7 +742,7 @@ const FounderMilestones = () => (
           </p>
         </div>
       </div>
-      
+
       <div className="border border-gray-800 rounded-lg p-4">
         <div className="flex justify-between items-start">
           <div>
@@ -981,7 +775,7 @@ const PotentialInvestors = () => (
   <div className="space-y-6">
     <div className="bg-black border border-gray-800 rounded-xl p-6">
       <h2 className="text-xl font-medium mb-6">Potential Investors</h2>
-      
+
       <div className="mb-6">
         <div className="flex gap-2 mb-4">
           <button className="px-4 py-2 rounded-full text-sm font-medium transition-all bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] text-white">
@@ -997,7 +791,7 @@ const PotentialInvestors = () => (
             Gaming
           </button>
         </div>
-        
+
         <div className="relative">
           <input
             type="text"
@@ -1012,7 +806,7 @@ const PotentialInvestors = () => (
           </div>
         </div>
       </div>
-      
+
       <div className="space-y-4">
         <div className="border border-gray-800 rounded-lg p-4">
           <div className="flex justify-between items-start">
@@ -1033,7 +827,7 @@ const PotentialInvestors = () => (
             <button className="text-[#FF7171] font-medium hover:underline text-sm">Contact</button>
           </div>
         </div>
-        
+
         <div className="border border-gray-800 rounded-lg p-4">
           <div className="flex justify-between items-start">
             <div className="flex gap-3">
@@ -1053,7 +847,7 @@ const PotentialInvestors = () => (
             <button className="text-[#FF7171] font-medium hover:underline text-sm">Contact</button>
           </div>
         </div>
-        
+
         <div className="border border-gray-800 rounded-lg p-4">
           <div className="flex justify-between items-start">
             <div className="flex gap-3">
@@ -1118,11 +912,11 @@ const FounderSettings = () => {
   return (
     <div className="bg-black border border-gray-800 rounded-xl p-6">
       <h2 className="text-xl font-medium mb-6">Founder Account Settings</h2>
-      
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <h3 className="text-lg font-medium mb-4">Profile Information</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Name</label>
@@ -1134,7 +928,7 @@ const FounderSettings = () => {
                 className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">Email</label>
               <input
@@ -1147,14 +941,14 @@ const FounderSettings = () => {
             </div>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-4">Project Preferences</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Primary Project Type</label>
-              <select 
+              <select
                 name="projectType"
                 value={formData.projectType}
                 onChange={handleInputChange}
@@ -1168,10 +962,10 @@ const FounderSettings = () => {
                 <option value="other">Other</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">Preferred Blockchain</label>
-              <select 
+              <select
                 name="blockchain"
                 value={formData.blockchain}
                 onChange={handleInputChange}
@@ -1185,10 +979,10 @@ const FounderSettings = () => {
             </div>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-4">Notification Settings</h3>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
@@ -1196,41 +990,41 @@ const FounderSettings = () => {
                 <p className="text-sm text-gray-400">Receive emails about your projects</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
                   checked={formData.notifications.email}
                   onChange={() => handleNotificationChange('email')}
                 />
                 <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#FF7171] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
               </label>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Milestone Reminders</p>
                 <p className="text-sm text-gray-400">Get reminded about upcoming milestones</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
                   checked={formData.notifications.milestones}
                   onChange={() => handleNotificationChange('milestones')}
                 />
                 <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#FF7171] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
               </label>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">New Investor Alerts</p>
                 <p className="text-sm text-gray-400">Get notified when new investors show interest</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
                   checked={formData.notifications.investors}
                   onChange={() => handleNotificationChange('investors')}
                 />
@@ -1239,7 +1033,7 @@ const FounderSettings = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="pt-4">
           <button
             type="submit"
@@ -1256,7 +1050,7 @@ const FounderSettings = () => {
 // Investor Dashboard Components
 const InvestorDashboard = () => {
   const { setActiveSection } = React.useContext(DashboardContext);
-  
+
   return (
     <div className="space-y-8">
       <div className="bg-black border border-gray-800 rounded-xl p-6">
@@ -1280,23 +1074,23 @@ const InvestorDashboard = () => {
       <div className="bg-black border border-gray-800 rounded-xl p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-medium">Featured Projects</h2>
-          <button 
+          <button
             onClick={() => setActiveSection("browse-projects")}
             className="text-[#FF7171] text-sm flex items-center gap-1 hover:underline"
           >
             Browse all <ChevronRight size={16} />
           </button>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="border border-gray-800 rounded-lg overflow-hidden group">
             <div className="h-40 bg-gray-800 relative overflow-hidden">
-              <Image 
-                src="/image.png" 
-                alt="Project" 
+              <Image
+                src="/image.png"
+                alt="Project"
                 width={500}
                 height={200}
-                className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
+                className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
               />
               <div className="absolute top-2 right-2 bg-green-900/70 text-green-400 text-xs px-2 py-1 rounded-full">
                 Active
@@ -1315,7 +1109,7 @@ const InvestorDashboard = () => {
                   <p className="font-medium">$5,000</p>
                 </div>
                 <div>
-                  <button 
+                  <button
                     className="text-[#FF7171] flex items-center gap-1 hover:underline"
                   >
                     View <ArrowUpRight size={14} />
@@ -1324,15 +1118,15 @@ const InvestorDashboard = () => {
               </div>
             </div>
           </div>
-          
+
           <div className="border border-gray-800 rounded-lg overflow-hidden group">
             <div className="h-40 bg-gray-800 relative overflow-hidden">
-              <Image 
-                src="/Frame 27 (3).png" 
-                alt="Project" 
+              <Image
+                src="/Frame 27 (3).png"
+                alt="Project"
                 width={500}
                 height={200}
-                className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500" 
+                className="absolute inset-0 w-full h-full object-cover transition-transform group-hover:scale-105 duration-500"
               />
               <div className="absolute top-2 right-2 bg-purple-900/70 text-purple-400 text-xs px-2 py-1 rounded-full">
                 New
@@ -1351,7 +1145,7 @@ const InvestorDashboard = () => {
                   <p className="font-medium">$2,500</p>
                 </div>
                 <div>
-                  <button 
+                  <button
                     className="text-[#FF7171] flex items-center gap-1 hover:underline"
                   >
                     View <ArrowUpRight size={14} />
@@ -1366,7 +1160,7 @@ const InvestorDashboard = () => {
       <div className="bg-black border border-gray-800 rounded-xl p-6">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-medium">Your Investments</h2>
-          <button 
+          <button
             onClick={() => setActiveSection("investments")}
             className="text-[#FF7171] text-sm flex items-center gap-1 hover:underline"
           >
@@ -1404,12 +1198,12 @@ const InvestorDashboard = () => {
       </div>
     </div>
   );
-}; 
+};
 
 const InvestorInvestments = () => (
   <div className="bg-black border border-gray-800 rounded-xl p-6">
     <h2 className="text-xl font-medium mb-6">Your Investments</h2>
-    
+
     <div className="mb-6">
       <div className="relative">
         <input
@@ -1425,7 +1219,7 @@ const InvestorInvestments = () => (
         </div>
       </div>
     </div>
-    
+
     <div className="space-y-4">
       <div className="border border-gray-800 rounded-lg p-4">
         <div className="flex justify-between items-start">
@@ -1455,7 +1249,7 @@ const InvestorInvestments = () => (
           </div>
         </div>
       </div>
-      
+
       <div className="border border-gray-800 rounded-lg p-4">
         <div className="flex justify-between items-start">
           <div>
@@ -1484,7 +1278,7 @@ const InvestorInvestments = () => (
           </div>
         </div>
       </div>
-      
+
       <div className="border border-gray-800 rounded-lg p-4">
         <div className="flex justify-between items-start">
           <div>
@@ -1515,55 +1309,9 @@ const InvestorInvestments = () => (
       </div>
     </div>
   </div>
-); 
+);
 
-const BrowseProjects = () => (
-  <div className="space-y-6">
-    <div className="bg-black border border-gray-800 rounded-xl p-6">
-      <h2 className="text-xl font-medium mb-6">Browse Projects</h2>
-      
-      <div className="mb-6">
-        <div className="flex gap-2 mb-4 flex-wrap">
-          <button className="px-4 py-2 rounded-full text-sm font-medium transition-all bg-gradient-to-r from-[#2F50FF] via-[#FF7171] to-[#9360BB] text-white">
-            All
-          </button>
-          <button className="px-4 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white">
-            DeFi
-          </button>
-          <button className="px-4 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white">
-            NFT
-          </button>
-          <button className="px-4 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white">
-            Gaming
-          </button>
-          <button className="px-4 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white">
-            Infrastructure
-          </button>
-          <button className="px-4 py-2 rounded-full text-sm font-medium transition-all text-gray-400 hover:text-white">
-            Social
-          </button>
-        </div>
-        
-        <div className="relative">
-          <input
-            type="text"
-            className="w-full pl-10 p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#FF7171] outline-none"
-            placeholder="Search projects by name, category, or blockchain"
-          />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
-              <circle cx="11" cy="11" r="8"></circle>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-            </svg>
-          </div>
-        </div>
-      </div>
-      
-      {/* Smart Contract Integrated Project List */}
-      <ProjectList />
-    </div>
-  </div>
-); 
+
 
 const InvestorSettings = () => {
   const [formData, setFormData] = useState({
@@ -1624,11 +1372,11 @@ const InvestorSettings = () => {
   return (
     <div className="bg-black border border-gray-800 rounded-xl p-6">
       <h2 className="text-xl font-medium mb-6">Investor Account Settings</h2>
-      
+
       <form className="space-y-6" onSubmit={handleSubmit}>
         <div>
           <h3 className="text-lg font-medium mb-4">Profile Information</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Name</label>
@@ -1640,7 +1388,7 @@ const InvestorSettings = () => {
                 className="w-full p-3 bg-[#111]/80 backdrop-blur-sm border border-gray-600 rounded-lg focus:ring-2 focus:ring-[#2F50FF] outline-none"
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">Email</label>
               <input
@@ -1653,14 +1401,14 @@ const InvestorSettings = () => {
             </div>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-4">Investment Preferences</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-2">Investor Type</label>
-              <select 
+              <select
                 name="investorType"
                 value={formData.investorType}
                 onChange={handleInputChange}
@@ -1672,10 +1420,10 @@ const InvestorSettings = () => {
                 <option value="retail">Retail Investor</option>
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium mb-2">Preferred Investment Size</label>
-              <select 
+              <select
                 name="investmentSize"
                 value={formData.investmentSize}
                 onChange={handleInputChange}
@@ -1688,77 +1436,77 @@ const InvestorSettings = () => {
               </select>
             </div>
           </div>
-          
+
           <div className="mt-4">
             <label className="block text-sm font-medium mb-2">Investment Categories (select multiple)</label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               <div className="flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="defi" 
-                  className="mr-2" 
+                <input
+                  type="checkbox"
+                  id="defi"
+                  className="mr-2"
                   checked={formData.categories.defi}
-                  onChange={() => handleCheckboxChange('defi')} 
+                  onChange={() => handleCheckboxChange('defi')}
                 />
                 <label htmlFor="defi">DeFi</label>
               </div>
               <div className="flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="nft" 
-                  className="mr-2" 
+                <input
+                  type="checkbox"
+                  id="nft"
+                  className="mr-2"
                   checked={formData.categories.nft}
-                  onChange={() => handleCheckboxChange('nft')} 
+                  onChange={() => handleCheckboxChange('nft')}
                 />
                 <label htmlFor="nft">NFT</label>
               </div>
               <div className="flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="gaming" 
-                  className="mr-2" 
+                <input
+                  type="checkbox"
+                  id="gaming"
+                  className="mr-2"
                   checked={formData.categories.gaming}
-                  onChange={() => handleCheckboxChange('gaming')} 
+                  onChange={() => handleCheckboxChange('gaming')}
                 />
                 <label htmlFor="gaming">Gaming</label>
               </div>
               <div className="flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="infrastructure" 
-                  className="mr-2" 
+                <input
+                  type="checkbox"
+                  id="infrastructure"
+                  className="mr-2"
                   checked={formData.categories.infrastructure}
-                  onChange={() => handleCheckboxChange('infrastructure')} 
+                  onChange={() => handleCheckboxChange('infrastructure')}
                 />
                 <label htmlFor="infrastructure">Infrastructure</label>
               </div>
               <div className="flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="dao" 
-                  className="mr-2" 
+                <input
+                  type="checkbox"
+                  id="dao"
+                  className="mr-2"
                   checked={formData.categories.dao}
-                  onChange={() => handleCheckboxChange('dao')} 
+                  onChange={() => handleCheckboxChange('dao')}
                 />
                 <label htmlFor="dao">DAO</label>
               </div>
               <div className="flex items-center">
-                <input 
-                  type="checkbox" 
-                  id="social" 
-                  className="mr-2" 
+                <input
+                  type="checkbox"
+                  id="social"
+                  className="mr-2"
                   checked={formData.categories.social}
-                  onChange={() => handleCheckboxChange('social')} 
+                  onChange={() => handleCheckboxChange('social')}
                 />
                 <label htmlFor="social">Social</label>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-4">Notification Settings</h3>
-          
+
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div>
@@ -1766,41 +1514,41 @@ const InvestorSettings = () => {
                 <p className="text-sm text-gray-400">Receive emails about new projects that match your preferences</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
                   checked={formData.notifications.newProjects}
                   onChange={() => handleNotificationChange('newProjects')}
                 />
                 <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#2F50FF] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
               </label>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Milestone Completion Notifications</p>
                 <p className="text-sm text-gray-400">Get notified when projects you've invested in complete milestones</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
                   checked={formData.notifications.milestones}
                   onChange={() => handleNotificationChange('milestones')}
                 />
                 <div className="w-11 h-6 bg-gray-700 rounded-full peer peer-checked:bg-[#2F50FF] peer-checked:after:translate-x-full after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all"></div>
               </label>
             </div>
-            
+
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium">Performance Reports</p>
                 <p className="text-sm text-gray-400">Receive weekly performance reports for your investments</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
-                <input 
-                  type="checkbox" 
-                  className="sr-only peer" 
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
                   checked={formData.notifications.reports}
                   onChange={() => handleNotificationChange('reports')}
                 />
@@ -1809,7 +1557,7 @@ const InvestorSettings = () => {
             </div>
           </div>
         </div>
-        
+
         <div className="pt-4">
           <button
             type="submit"
@@ -1827,7 +1575,7 @@ const InvestmentPerformance = () => (
   <div className="space-y-6">
     <div className="bg-black border border-gray-800 rounded-xl p-6">
       <h2 className="text-xl font-medium mb-6">Investment Performance</h2>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <div className="bg-[#111] p-4 rounded-lg">
           <div className="text-sm text-gray-400">Total Invested</div>
@@ -1842,7 +1590,7 @@ const InvestmentPerformance = () => (
           <div className="text-2xl font-semibold mt-2 text-green-500">+20.6%</div>
         </div>
       </div>
-      
+
       <div className="space-y-6">
         <div>
           <h3 className="text-lg font-medium mb-4">Investment Breakdown</h3>
@@ -1865,7 +1613,7 @@ const InvestmentPerformance = () => (
                 </div>
               </div>
             </div>
-            
+
             <div className="border border-gray-800 rounded-lg p-4">
               <div className="flex justify-between items-start">
                 <div>
@@ -1886,7 +1634,7 @@ const InvestmentPerformance = () => (
             </div>
           </div>
         </div>
-        
+
         <div>
           <h3 className="text-lg font-medium mb-4">Milestone Progress</h3>
           <div className="grid grid-cols-1 gap-4">
@@ -1930,7 +1678,7 @@ const InvestorWallet = () => {
             <div className="text-2xl font-semibold mt-2">$85,000</div>
           </div>
         </div>
-        
+
         <div className="flex gap-4 mt-6">
           <button className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-[#2F50FF] to-[#4364ff] hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><polyline points="19 12 12 19 5 12"></polyline></svg>
@@ -1953,7 +1701,7 @@ const InvestorWallet = () => {
 
       <div className="bg-black border border-gray-800 rounded-xl p-6">
         <h2 className="text-xl font-medium mb-6">Transaction History</h2>
-        
+
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-800">
             <thead>
@@ -2028,7 +1776,7 @@ const InvestorDonationForm = () => {
     amount: ''
   });
   const [loading, setLoading] = useState(false);
-  
+
   // Handle donation input changes
   const handleDonationChange = (e: DonationInputEvent) => {
     const { name, value } = e.target;
@@ -2038,13 +1786,13 @@ const InvestorDonationForm = () => {
   // Handle donation submission
   const handleDonate = async (e: DonationFormEvent) => {
     e.preventDefault();
-    
+
     // Check both Wagmi and contract connection status
     if (!isWagmiConnected) {
       addNotification('Please connect your wallet first', 'error');
       return;
     }
-    
+
     // If Wagmi says we're connected but contract doesn't, try to force a refresh
     if (!isContractConnected) {
       addNotification('Wallet connected but contract not initialized. Please refresh the page.', 'error');
@@ -2053,7 +1801,7 @@ const InvestorDonationForm = () => {
 
     try {
       setLoading(true);
-      
+
       // Show pending notification
       addNotification('Processing investment, please confirm in your wallet...', 'info', 0);
 
@@ -2067,21 +1815,21 @@ const InvestorDonationForm = () => {
       const amount = ethers.utils.parseEther(donationData.amount);
 
       console.log(`Investing ${donationData.amount} ETH in project ID: ${projectId}`);
-      
+
       const tx = await donateToProject(
-        projectId,
-        amount
+        projectId.toString(),
+        amount.toString()
       );
 
       // Update notification while waiting for transaction
       addNotification('Transaction submitted. Waiting for confirmation...', 'info', 0);
-      
+
       // Wait for transaction confirmation
       await tx.wait();
-      
+
       // Show success notification
       addNotification(`Successfully invested ${donationData.amount} ETH in project #${donationData.projectId}!`, 'success');
-      
+
       // Reset form
       setDonationData({
         projectId: '',
@@ -2111,7 +1859,7 @@ const InvestorDonationForm = () => {
               required
             />
           </div>
-          
+
           <div>
             <label className="block text-sm font-medium text-white">Amount (ETH)</label>
             <input
@@ -2124,7 +1872,7 @@ const InvestorDonationForm = () => {
               required
             />
           </div>
-          
+
           <button
             type="submit"
             disabled={loading || !isWagmiConnected || !isContractConnected}
