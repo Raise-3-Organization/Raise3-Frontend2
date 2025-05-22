@@ -7,7 +7,7 @@ import MultiStepProjectForm from "../project/MultiStepProjectForm";
 import ProjectList from "../ProjectList";
 import ContractInitializer from "../ContractInitializer";
 import FounderProjects from "./FounderProjects";
-
+import CreateMilestone from "../milestone/CreateMilestone";
 const FounderDashboard = () => {
     const { address } = useAccount();
     const { activeSection, setActiveSection } = useContext(DashboardContext);

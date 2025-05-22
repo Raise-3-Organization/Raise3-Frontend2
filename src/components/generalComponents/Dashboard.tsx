@@ -76,7 +76,6 @@ const Dashboard = () => {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [activeView, setActiveView] = useState<ActiveView>("founder");
   const [activeSection, setActiveSection] = useState("dashboard");
   const [isRegistrationModalOpen, setIsRegistrationModalOpen] = useState(false);

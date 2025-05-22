@@ -59,10 +59,10 @@ const ProjectActions = () => {
     e.preventDefault();
 
     // Check both Wagmi and contract connection status
-    if (!isWagmiConnected) {
-      addNotification("Please connect your wallet first", "error");
-      return;
-    }
+    // if (!isWagmiConnected) {
+    //   addNotification("Please connect your wallet first", "error");
+    //   return;
+    // }
 
     // If Wagmi says we're connected but contract doesn't, try to force a refresh
     if (!isContractConnected) {
@@ -186,13 +186,13 @@ const ProjectActions = () => {
   };
 
   // Only check for wallet connection when not in dashboard
-  if (!isWagmiConnected && !window.location.href.includes("dashboard")) {
-    return (
-      <div className="p-4">
-        Please connect your wallet to interact with projects
-      </div>
-    );
-  }
+  // if (!isWagmiConnected && !window.location.href.includes("dashboard")) {
+  //   return (
+  //     <div className="p-4">
+  //       Please connect your wallet to interact with projects
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="space-y-8 p-4">

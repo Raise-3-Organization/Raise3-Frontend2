@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
+import { useRoles } from "@/hooks/useRoles";
 
 interface MilestoneItem {
   title: string;

@@ -67,3 +67,27 @@ export async function makeContractMetadata({
 
     return contractMetadataJsonUri;
 }
+
+
+
+interface MilestoneMetadata {
+    title: string;
+    description: string;
+    targetDate: string;
+    status: 'pending' | 'completed' | 'in-progress'; // Assuming these are the possible statuses
+    deliverables: string[];
+    budget: string;
+    budgetCurrency: string;
+}
+// ProjectAction
+export async function mileStoneMetadaya({
+    title,
+    description,
+    targetDate,
+    status,
+    deliverables,
+    budget,
+    budgetCurrency
+}: MilestoneMetadata) {
+    
+}

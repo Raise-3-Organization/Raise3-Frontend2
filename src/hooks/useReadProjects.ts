@@ -1,5 +1,4 @@
 import { useReadContract } from "wagmi"
-import { CONTRACT_ROLE } from "@/contants"
 import { contractAddress } from "@/contants"
 import Raise3Abi from "@/abis/Raise3MileStone.json";
 

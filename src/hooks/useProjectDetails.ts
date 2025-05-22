@@ -1,3 +1,4 @@
+'use client'
 import { useState, useCallback, useEffect } from 'react';
 import { fetchIPFSData } from '@/helper';
 import { ProjectInterface, BusinessModel } from '@/types'; // Import your interfaces
@@ -8,7 +9,7 @@ export const useProjectDetails = (projects: any[]) => {
 
     const formatProject = useCallback(() => {
         if (!projects || !Array.isArray(projects)) {
-            console.log("employDetails is empty or invalid:", projects);
+            console.log("projects are empty or invalid:", projects);
             return;
         }
 
