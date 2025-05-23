@@ -1,7 +1,12 @@
+'use client'
 import React, { useState } from 'react';
 import { X, Plus, Trash2 } from 'lucide-react';
 import { useRoles } from "@/hooks/useRoles";
-
+import { useAccount, useWriteContract } from 'wagmi';
+import { mileStoneMetadata } from '@/helper/UploadPinta';
+import Raise3Abi from "@/abis/Raise3MileStone.json";
+import { contractAddress } from '@/contants';
+// import { useParams } from 'next/navigation';
 interface MilestoneItem {
   title: string;
   description: string;
@@ -18,18 +23,20 @@ interface MilestoneFormData {
 
 interface CreateMilestoneProps {
   onClose: () => void;
-  onSubmit?: (data: MilestoneFormData) => void;
-  projectId?: string;
+  projectId: string;
 }
 
-const CreateMilestone: React.FC<CreateMilestoneProps> = ({ 
+const CreateMilestone = ({ 
   onClose, 
-  onSubmit,
   projectId 
-}) => {
+}: CreateMilestoneProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  const { address } = useAccount()
+  const { writeContractAsync } = useWriteContract()
+  const { isFounderRole } = useRoles(address as `0x${string}`)
   
   const [formData, setFormData] = useState<MilestoneFormData>({
     milestones: [
@@ -150,12 +157,31 @@ const CreateMilestone: React.FC<CreateMilestoneProps> = ({
     if (validateForm()) {
       try {
         setIsSubmitting(true);
-        // Simulate API call to create milestones
-        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Call onSubmit if provided
-        if (onSubmit) {
-          onSubmit(formData);
+
+        if (!isFounderRole) {
+          setError('You do not have permission to create milestones.');
+          setIsSubmitting(false);
+          return;
+        }
+
+        const response = await mileStoneMetadata({
+          title: formData.milestones[0].title,
+          description: formData.milestones[0].description,
+          targetDate: formData.milestones[0].targetDate,
+          status: formData.milestones[0].status,
+          deliverables: formData.milestones[0].deliverables,
+          budget: formData.milestones[0].budget ?? "",
+          budgetCurrency: formData.milestones[0].budgetCurrency ?? "USD"
+        })
+
+        if (response) {
+          const responseContract = await writeContractAsync({
+            abi: Raise3Abi,
+            address: contractAddress,
+            functionName: 'addMilestone',
+            args: [projectId, response, formData.milestones[0].budget]
+          })
         }
         
         // Milestones created successfully

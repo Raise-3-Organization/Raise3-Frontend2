@@ -1,11 +1,11 @@
 'use client'
 import React, { useState } from 'react'
 import ProjectView from '@/components/project/ProjectView'
-import ProjectActions from '@/components/ProjectActions'
 import CreateMilestone from '@/components/milestone/CreateMilestone'
-
+import { useParams } from 'next/navigation'
 const PreviewProject = () => {
     const [isMilestoneOpen, setIsMilestoneOpen] = useState(false);
+    const params = useParams();
 
     const handleOpenMilestone = () => {
         setIsMilestoneOpen(true);
@@ -19,7 +19,7 @@ const PreviewProject = () => {
         <>
             <ProjectView />
             <button onClick={handleOpenMilestone}>Add Milestone</button>
-            {isMilestoneOpen && <CreateMilestone onClose={handleCloseMilestone} />}
+            {isMilestoneOpen && <CreateMilestone onClose={handleCloseMilestone} projectId={params?.id as string} />}
         </>
     )
 }

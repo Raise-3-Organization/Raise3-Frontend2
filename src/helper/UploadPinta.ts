@@ -80,7 +80,7 @@ interface MilestoneMetadata {
     budgetCurrency: string;
 }
 // ProjectAction
-export async function mileStoneMetadaya({
+export async function mileStoneMetadata({
     title,
     description,
     targetDate,
@@ -89,5 +89,19 @@ export async function mileStoneMetadaya({
     budget,
     budgetCurrency
 }: MilestoneMetadata) {
+
+    const metadataJson = {
+        title: title,
+        description: description,
+        targetDate: targetDate,
+        status: status,
+        deliverables: deliverables,
+        budget: budget,
+        budgetCurrency: budgetCurrency
+    }
+
+    const contractMetadataJsonUri = await pinJsonWithPinata(metadataJson);
+
+    return contractMetadataJsonUri;
     
 }
