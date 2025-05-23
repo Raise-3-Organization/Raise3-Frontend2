@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faBuilding, 
@@ -15,6 +15,13 @@ import {
   faEnvelope, 
   faUsers, 
   faArrowUpRightFromSquare,
+  faChevronDown,
+  faChevronUp,
+  faCheck,
+  faSpinner,
+  faClock,
+  faList,
+  faMoneyBill,
 } from '@fortawesome/free-solid-svg-icons';
 import {
   faGithub,
@@ -22,6 +29,17 @@ import {
   faLinkedin,
   faDiscord
 } from '@fortawesome/free-brands-svg-icons';
+
+interface Milestone {
+  id: string;
+  title: string;
+  description: string;
+  targetDate: string;
+  status: 'pending' | 'in-progress' | 'completed';
+  deliverables: string[];
+  budget?: string;
+  budgetCurrency?: string;
+}
 
 interface ProjectViewProps {
   project: {
@@ -66,6 +84,9 @@ interface ProjectViewProps {
         role: string;
       }>;
     };
+
+    // Milestones
+    milestones?: Milestone[];
 
     // Optional fields 
     createdAt?: string;
@@ -352,6 +373,26 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
           </section>
         </div>
 
+        {/* Milestones Accordion */}
+        <section className="mt-8">
+          <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
+            <FontAwesomeIcon icon={faList} className="mr-2 text-[#FF7171] h-[18px]" />
+            Project Milestones
+          </h2>
+          
+          {project.milestones && project.milestones.length > 0 ? (
+            <div className="space-y-4">
+              {project.milestones.map((milestone, index) => (
+                <MilestoneAccordion key={milestone.id || index} milestone={milestone} index={index} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-800 text-gray-400 text-center">
+              No milestones have been added to this project yet.
+            </div>
+          )}
+        </section>
+        
         {/* Footer with dates */}
         {(project.createdAt || project.updatedAt) && (
           <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-800 pt-4 mt-8">
@@ -370,6 +411,120 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+// Milestone Accordion Component
+const MilestoneAccordion: React.FC<{ milestone: Milestone; index: number }> = ({ milestone, index }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  const getStatusIcon = (status: string) => {
+    switch(status) {
+      case 'completed':
+        return <FontAwesomeIcon icon={faCheck} className="text-green-500 h-[14px]" />;
+      case 'in-progress':
+        return <FontAwesomeIcon icon={faSpinner} className="text-blue-500 h-[14px]" />;
+      default: // pending
+        return <FontAwesomeIcon icon={faClock} className="text-yellow-500 h-[14px]" />;
+    }
+  };
+  
+  const getStatusBadgeColor = (status: string) => {
+    switch(status) {
+      case 'completed':
+        return 'bg-green-900/30 border-green-800/50 text-green-400';
+      case 'in-progress':
+        return 'bg-blue-900/30 border-blue-800/50 text-blue-400';
+      default: // pending
+        return 'bg-yellow-900/30 border-yellow-800/50 text-yellow-400';
+    }
+  };
+  
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
+  
+  return (
+    <div className="border border-gray-800 rounded-lg overflow-hidden hover:border-gray-700 transition-all bg-gradient-to-b from-gray-900/50 to-black/30">
+      {/* Accordion Header */}
+      <div 
+        className="flex items-center justify-between p-4 cursor-pointer"
+        onClick={() => setIsOpen(!isOpen)}
+      >
+        <div className="flex items-center space-x-3">
+          <div className="flex items-center justify-center w-8 h-8 bg-gray-800 rounded-full text-white font-medium">
+            {index + 1}
+          </div>
+          <div>
+            <h3 className="text-white font-medium">{milestone.title}</h3>
+            <div className="flex items-center mt-1 space-x-3">
+              <span className={`px-2 py-0.5 text-xs font-medium rounded-full border flex items-center ${getStatusBadgeColor(milestone.status)}`}>
+                {getStatusIcon(milestone.status)}
+                <span className="ml-1 capitalize">{milestone.status.replace('-', ' ')}</span>
+              </span>
+              
+              {milestone.targetDate && (
+                <span className="text-xs text-gray-400 flex items-center">
+                  <FontAwesomeIcon icon={faCalendarDay} className="mr-1 h-[12px]" />
+                  Due: {formatDate(milestone.targetDate)}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+        
+        <FontAwesomeIcon 
+          icon={isOpen ? faChevronUp : faChevronDown} 
+          className="text-gray-400 h-[16px]" 
+        />
+      </div>
+      
+      {/* Accordion Content */}
+      {isOpen && (
+        <div className="px-4 pb-4 pt-1 border-t border-gray-800 space-y-4">
+          {/* Description */}
+          {milestone.description && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-300 mb-1">Description</h4>
+              <p className="text-gray-400 text-sm bg-black/30 p-3 rounded-lg">
+                {milestone.description}
+              </p>
+            </div>
+          )}
+          
+          {/* Deliverables */}
+          {milestone.deliverables && milestone.deliverables.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium text-gray-300 mb-2">Deliverables</h4>
+              <ul className="space-y-1.5">
+                {milestone.deliverables.map((deliverable, i) => (
+                  <li key={i} className="flex items-start">
+                    <FontAwesomeIcon icon={faCheck} className="text-gray-500 mr-2 mt-1 h-[12px]" />
+                    <span className="text-sm text-gray-400">{deliverable}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {/* Budget if exists */}
+          {milestone.budget && (
+            <div className="flex items-center space-x-1 text-sm text-gray-400">
+              <FontAwesomeIcon icon={faMoneyBill} className="text-green-500 mr-1 h-[14px]" />
+              <span>Budget: {milestone.budget} {milestone.budgetCurrency || 'USD'}</span>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
