@@ -89,7 +89,7 @@ export function Providers({ children }: ProvidersProps) {
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider attribute="class">
-          {mounted && (
+          {/* {mounted && ( */}
             <RainbowKitProvider 
               appInfo={{
                 appName: 'Raise3 Application',
@@ -108,16 +108,16 @@ export function Providers({ children }: ProvidersProps) {
               }}
             >
               <ContractProvider>
-                <WalletRedirector />
+                {/* <WalletRedirector /> */}
                 {children}
               </ContractProvider>
             </RainbowKitProvider>
-          )}
-          {!mounted && (
-            <ContractProvider>
+          {/* )} */}
+          {/* {!mounted && ( */}
+            {/* <ContractProvider>
               {children}
-            </ContractProvider>
-          )}
+            </ContractProvider> */}
+          {/* )} */}
         </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>

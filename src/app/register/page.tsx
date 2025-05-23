@@ -71,7 +71,7 @@ function RegisterContent() {
     }
     
     // Redirect to dashboard
-    router.push("/dashboard");
+    // router.push("/dashboard");
   };
 
   return (

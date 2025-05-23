@@ -1,3 +1,4 @@
+'use client'
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
@@ -29,6 +30,9 @@ import {
   faLinkedin,
   faDiscord
 } from '@fortawesome/free-brands-svg-icons';
+import { useParams } from 'next/navigation';
+import { useReadProjects } from '@/hooks/useReadProjects';
+import { useProjectDetails } from '@/hooks/useProjectDetails';
 
 interface Milestone {
   id: string;
@@ -41,61 +45,72 @@ interface Milestone {
   budgetCurrency?: string;
 }
 
-interface ProjectViewProps {
-  project: {
-    // General Info
-    projectName: string;
-    description: string;
-    problem: string;
-    solution: string;
-    mission: string;
-    location: string;
-    
-    // Social Media
-    socialMedia: {
-      twitter: string;
-      github: string;
-      discord: string;
-      website: string;
-      linkedin: string;
-    };
-    
-    // Project Stage
-    projectStage: {
-      path: string;
-      businessModel: string;
-      stage: string;
-      raisedAmount: string;
-      raisedCurrency: string;
-    };
-    
-    // Contact Info
-    contactInfo: {
-      fullName: string;
-      email: string;
-      telegram: string;
-      network: string;
-    };
-
-    // Team
-    team: {
-      members: Array<{
-        name: string;
-        role: string;
-      }>;
-    };
-
-    // Milestones
-    milestones?: Milestone[];
-
-    // Optional fields 
-    createdAt?: string;
-    updatedAt?: string;
-    imageUrl?: string;
+interface ProjectData {
+  // General Info
+  projectName: string;
+  description: string;
+  problem: string;
+  solution: string;
+  mission: string;
+  location: string;
+  
+  // Social Media
+  socialMedia: {
+    twitter: string;
+    github: string;
+    discord: string;
+    website: string;
+    linkedin: string;
   };
+  
+  // Project Stage
+  projectStage: {
+    path: string;
+    businessModel: string;
+    stage: string;
+    raisedAmount: string;
+    raisedCurrency: string;
+  };
+  
+  // Contact Info
+  contactInfo: {
+    fullName: string;
+    email: string;
+    telegram: string;
+    network: string;
+  };
+
+  // Team
+  team: {
+    members: Array<{
+      name: string;
+      role: string;
+    }>;
+  };
+
+  // Milestones
+  milestones?: Milestone[];
+
+  // Optional fields 
+  createdAt?: string;
+  updatedAt?: string;
+  imageUrl?: string;
 }
 
-const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
+interface ProjectViewProps {
+  project?: ProjectData;
+}
+
+const ProjectView = (props: ProjectViewProps) => {
+  // If project is passed directly as a prop, use it
+  // Otherwise, fetch it using hooks
+  const params = useParams();
+  const id = params?.id as string;
+  const { projects, isProjectLoading } = useReadProjects(id);
+  const { project: fetchedProject, projectDetails } = useProjectDetails(projects as any[]);
+  
+  // Use either the prop-passed project or the fetched one
+  const project = props.project || fetchedProject;
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -105,31 +120,32 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
     });
   };
 
+
   const renderSocialLinks = () => {
     const socialLinks = [
       { 
         name: 'X', 
-        url: project.socialMedia.twitter, 
+        url: projectDetails?.projectXLink, 
         icon: <FontAwesomeIcon icon={faXTwitter} className="text-white h-[18px]" /> 
       },
       { 
         name: 'GitHub', 
-        url: project.socialMedia.github, 
+        url: projectDetails?.githubLink, 
         icon: <FontAwesomeIcon icon={faGithub} className="text-white h-[18px]" /> 
       },
       { 
         name: 'Discord', 
-        url: project.socialMedia.discord, 
+        url: projectDetails?.discord, 
         icon: <FontAwesomeIcon icon={faDiscord} className="text-[#5865F2] h-[18px]" /> 
       },
       { 
         name: 'Website', 
-        url: project.socialMedia.website, 
+        url: projectDetails?.websiteLink, 
         icon: <FontAwesomeIcon icon={faGlobe} className="text-[#FF7171] h-[18px]" /> 
       },
       { 
         name: 'LinkedIn', 
-        url: project.socialMedia.linkedin, 
+        url: projectDetails?.linkedIn, 
         icon: <FontAwesomeIcon icon={faLinkedin} className="text-[#0077B5] h-[18px]" /> 
       }
     ];
@@ -159,10 +175,10 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
     <div className="rounded-xl border border-gray-800 overflow-hidden bg-gradient-to-b from-gray-900 to-black shadow-xl">
       {/* Hero Section */}
       <div className="relative h-40 md:h-60 bg-gradient-to-r from-[#FF7171]/20 to-[#FF5C87]/20 overflow-hidden">
-        {project.imageUrl ? (
+        {projectDetails?.image ? (
           <img 
-            src={project.imageUrl} 
-            alt={project.projectName} 
+            src={`https://ipfs.io/ipfs/${projectDetails?.image.substring(7)}`} 
+            alt={projectDetails?.projectName} 
             className="absolute inset-0 w-full h-full object-cover opacity-50"
           />
         ) : (
@@ -177,17 +193,17 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold text-white">{project.projectName}</h1>
-                {project.projectStage.stage && (
+                <h1 className="text-2xl font-bold text-white">{projectDetails?.projectName}</h1>
+                {projectDetails?.projectStage && (
                   <span className="px-2 py-0.5 text-xs font-medium bg-blue-900/50 text-blue-200 rounded-full border border-blue-800/50">
-                    {project.projectStage.stage}
+                    {projectDetails?.projectStage}
                   </span>
                 )}
               </div>
-              {project.location && (
+              {projectDetails?.location && (
                 <div className="flex items-center text-gray-400 text-sm mt-1">
                   <FontAwesomeIcon icon={faLocationDot} className="mr-1 h-[14px]" />
-                  {project.location}
+                  {projectDetails?.location }
                 </div>
               )}
             </div>
@@ -205,52 +221,52 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
           </h2>
           
           <div className="space-y-6">
-            {project.description && (
+            {projectDetails?.description && (
               <div>
                 <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
                   <FontAwesomeIcon icon={faStar} className="mr-1.5 text-yellow-500 h-[14px]" />
                   Description
                 </h3>
                 <p className="text-white text-sm leading-relaxed bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-                  {project.description}
+                  {projectDetails.description}
                 </p>
               </div>
             )}
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {project.problem && (
+              {projectDetails?.projectProblem && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
                     <FontAwesomeIcon icon={faBullseye} className="mr-1.5 text-red-500 h-[14px]" />
                     Project Problem
                   </h3>
                   <p className="text-white text-sm leading-relaxed bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-                    {project.problem}
+                    {projectDetails?.projectProblem}
                   </p>
                 </div>
               )}
               
-              {project.solution && (
+              {projectDetails?.projectSolution && (
                 <div>
                   <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
                     <FontAwesomeIcon icon={faLightbulb} className="mr-1.5 text-yellow-500 h-[14px]" />
                     Project Solution
                   </h3>
                   <p className="text-white text-sm leading-relaxed bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-                    {project.solution}
+                    {projectDetails?.projectSolution}
                   </p>
                 </div>
               )}
             </div>
             
-            {project.mission && (
+            {projectDetails?.projectMission && (
               <div>
                 <h3 className="text-sm font-medium text-gray-400 mb-2 flex items-center">
                   <FontAwesomeIcon icon={faHeart} className="mr-1.5 text-[#FF5C87] h-[14px]" />
                   Project Mission
                 </h3>
                 <p className="text-white text-sm leading-relaxed bg-gray-900/50 p-4 rounded-lg border border-gray-800">
-                  {project.mission}
+                  {projectDetails?.projectMission}
                 </p>
               </div>
             )}
@@ -275,31 +291,31 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {project.projectStage.path && (
+            {projectDetails?.projectType && (
               <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-800">
                 <h3 className="text-xs font-medium text-gray-400 mb-1">Path</h3>
                 <p className="text-white font-medium">
-                  {project.projectStage.path === 'path1' ? 'Product' :
-                   project.projectStage.path === 'path2' ? 'Service' :
-                   project.projectStage.path === 'path3' ? 'Community' : 
-                   project.projectStage.path}
+                  {projectDetails?.projectType === 'path1' ? 'Product' :
+                   projectDetails?.projectType === 'path2' ? 'Service' :
+                   projectDetails?.projectType === 'path3' ? 'Community' : 
+                   projectDetails?.projectType}
                 </p>
               </div>
             )}
             
-            {project.projectStage.businessModel && (
+            {projectDetails?.businessModel && (
               <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-800">
                 <h3 className="text-xs font-medium text-gray-400 mb-1">Business Model</h3>
-                <p className="text-white font-medium">{project.projectStage.businessModel}</p>
+                <p className="text-white font-medium">{projectDetails?.businessModel}</p>
               </div>
             )}
             
-            {project.projectStage.raisedAmount && (
+            {project?.totalRaised && (
               <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-800">
                 <h3 className="text-xs font-medium text-gray-400 mb-1">Funding Goal</h3>
                 <p className="text-white font-medium flex items-center">
                   <FontAwesomeIcon icon={faDollarSign} className="mr-0.5 text-green-500 h-[14px]" />
-                  {project.projectStage.raisedAmount} {project.projectStage.raisedCurrency}
+                  {project?.totalRaised} {projectDetails?.raisedCurrency}
                 </p>
               </div>
             )}
@@ -316,33 +332,33 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
             </h2>
             
             <div className="space-y-3">
-              {project.contactInfo.fullName && (
+              {projectDetails?.name && (
                 <div className="flex flex-col px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800">
                   <span className="text-xs text-gray-400">Full Name</span>
-                  <span className="text-white">{project.contactInfo.fullName}</span>
+                  <span className="text-white">{projectDetails?.name}</span>
                 </div>
               )}
               
-              {project.contactInfo.email && (
+              {projectDetails?.email && (
                 <div className="flex flex-col px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800">
                   <span className="text-xs text-gray-400">Email</span>
-                  <a href={`mailto:${project.contactInfo.email}`} className="text-blue-400 hover:text-blue-300 transition-colors">
-                    {project.contactInfo.email}
+                  <a href={`mailto:${projectDetails?.email}`} className="text-blue-400 hover:text-blue-300 transition-colors">
+                    {projectDetails?.email}
                   </a>
                 </div>
               )}
               
-              {project.contactInfo.telegram && (
+              {projectDetails?.telegram && (
                 <div className="flex flex-col px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800">
                   <span className="text-xs text-gray-400">Telegram</span>
-                  <span className="text-white">@{project.contactInfo.telegram}</span>
+                  <span className="text-white">@{projectDetails?.telegram}</span>
                 </div>
               )}
               
-              {project.contactInfo.network && (
+              {projectDetails?.network && (
                 <div className="flex flex-col px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800">
                   <span className="text-xs text-gray-400">Network</span>
-                  <span className="text-white capitalize">{project.contactInfo.network}</span>
+                  <span className="text-white capitalize">{projectDetails?.network}</span>
                 </div>
               )}
             </div>
@@ -356,7 +372,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
             </h2>
             
             <div className="space-y-3">
-              {project.team.members.map((member, index) => (
+              {projectDetails?.team?.members?.map((member, index) => (
                 <div key={index} className="flex justify-between px-4 py-3 bg-gray-900/50 rounded-lg border border-gray-800">
                   <div className="flex items-center">
                     <div className="w-8 h-8 rounded-full bg-gradient-to-r from-[#FF7171] to-[#FF5C87] flex items-center justify-center text-white font-medium mr-3">
@@ -394,7 +410,8 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
         </section>
         
         {/* Footer with dates */}
-        {(project.createdAt || project.updatedAt) && (
+        {/* Commenting out date display as it's not available in the API yet */}
+        {/* {(project.createdAt || project.updatedAt) && (
           <div className="flex justify-between items-center text-xs text-gray-500 border-t border-gray-800 pt-4 mt-8">
             {project.createdAt && (
               <div className="flex items-center">
@@ -409,7 +426,7 @@ const ProjectView: React.FC<ProjectViewProps> = ({ project }) => {
               </div>
             )}
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

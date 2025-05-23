@@ -103,6 +103,7 @@
         "type": "string",
         "internalType": "string"
       },
+      { "name": "prove", "type": "string", "internalType": "string" },
       { "name": "isApproved", "type": "bool", "internalType": "bool" },
       { "name": "amount", "type": "uint256", "internalType": "uint256" },
       { "name": "completed", "type": "bool", "internalType": "bool" }
@@ -160,7 +161,12 @@
     "name": "completeMilestone",
     "inputs": [
       { "name": "_index", "type": "uint256", "internalType": "uint256" },
-      { "name": "_milestoneId", "type": "uint256", "internalType": "uint256" }
+      {
+        "name": "_milestoneId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      { "name": "_prove", "type": "string", "internalType": "string" }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -417,6 +423,12 @@
     "type": "event",
     "name": "MilestoneCompleted",
     "inputs": [
+      {
+        "name": "prove",
+        "type": "string",
+        "indexed": true,
+        "internalType": "string"
+      },
       {
         "name": "campaignId",
         "type": "uint256",
