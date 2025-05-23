@@ -180,7 +180,7 @@ const CreateMilestone = ({
             abi: Raise3Abi,
             address: contractAddress,
             functionName: 'addMilestone',
-            args: [projectId, response, formData.milestones[0].budget]
+            args: [projectId, (formData?.milestones[0]?.budget ?? "0").toString(), response]
           })
         }
         
@@ -209,6 +209,7 @@ const CreateMilestone = ({
       } catch (error) {
         setError('An error occurred while creating the milestones. Please try again.');
         setIsSubmitting(false);
+        console.log(error);
       }
     } else {
       setError('Please fill in all required fields.');

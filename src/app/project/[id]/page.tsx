@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import ProjectView from '@/components/project/ProjectView'
 import CreateMilestone from '@/components/milestone/CreateMilestone'
 import { useParams } from 'next/navigation'
+import NavbarDashboard from '@/components/NavbarDashboard'
 const PreviewProject = () => {
     const [isMilestoneOpen, setIsMilestoneOpen] = useState(false);
     const params = useParams();
@@ -17,6 +18,7 @@ const PreviewProject = () => {
 
     return (
         <>
+        <NavbarDashboard />
             <ProjectView />
             <button onClick={handleOpenMilestone}>Add Milestone</button>
             {isMilestoneOpen && <CreateMilestone onClose={handleCloseMilestone} projectId={params?.id as string} />}

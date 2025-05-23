@@ -72,7 +72,7 @@ export const DashboardContext = createContext<DashboardContextProps>({
 
 const Dashboard = () => {
   const { isConnected, address } = useAccount();
-  const router = useRouter();
+  
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
