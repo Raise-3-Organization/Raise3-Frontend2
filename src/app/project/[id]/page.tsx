@@ -9,11 +9,6 @@ import { useReadMileStone } from '@/hooks/useReadMileStone'
 const PreviewProject = () => {
     const [isMilestoneOpen, setIsMilestoneOpen] = useState(false);
     const params = useParams();
-
-    // const { mileStone, mileStoneError } = useReadMileStone({ projectId: "0", mileStoneId: "0" });
-
-    // console.log("mileStone", mileStone, mileStoneError);
-
     const handleOpenMilestone = () => {
         setIsMilestoneOpen(true);
     };
