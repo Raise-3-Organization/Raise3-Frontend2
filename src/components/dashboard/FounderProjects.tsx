@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useAccount, useCall, useReadContract } from "wagmi";
-import ContractInitializer from "../ContractInitializer";
+import { useAccount, useReadContract } from "wagmi";
 import ProjectList from "../ProjectList";
 import FounderProjectsCard from "./FounderProjectsCard";
-import { CONTRACT_ROLE } from "@/contants"
 import { contractAddress } from "@/contants"
 import Raise3Abi from "@/abis/Raise3MileStone.json";
 

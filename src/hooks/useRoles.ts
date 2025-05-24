@@ -24,5 +24,7 @@ export const useRoles = (address: string) => {
         args: [CONTRACT_ROLE.MANAGER_ROLE, address],
     });
 
+    
+
     return {isFounderRole, isInvestorRole, isInvestorLoading, investorError, isManagerLoading, isManagerRole}
 } 
