@@ -7,7 +7,8 @@ import { useRoles } from '@/hooks/useRoles';
 import { useAccount, useWriteContract } from 'wagmi';
 import { contractAddress } from "@/contants"
 import Raise3Abi from "@/abis/Raise3MileStone.json";
-
+import { useReadProjects } from '@/hooks/useReadProjects';
+import { useProjectDetails } from '@/hooks/useProjectDetails'
 
 interface MileStoneProps {
   projectId: string;
@@ -19,8 +20,9 @@ const MilestoneAccordion = ({ projectId, mileStoneId }: MileStoneProps) => {
 
   const { address } = useAccount();
   const { writeContractAsync } = useWriteContract();
-
-  const { isInvestorRole } = useRoles(address as `0x${string}`);
+  const { projects } = useReadProjects(projectId)
+  const { project, projectDetails } = useProjectDetails(projects as any[]);
+  const { isInvestorRole, isFounderRole, isManagerRole } = useRoles(address as `0x${string}`);
 
   const { mileStone } = useReadMileStone({
     projectId: projectId, mileStoneId: mileStoneId
@@ -38,7 +40,7 @@ const MilestoneAccordion = ({ projectId, mileStoneId }: MileStoneProps) => {
       const response = await writeContractAsync({
         address: contractAddress,
         abi: Raise3Abi,
-        functionName: 'hasRole',
+        functionName: 'approveMilestone',
         args: [projectId, mileStoneId]
       })
 
@@ -48,8 +50,53 @@ const MilestoneAccordion = ({ projectId, mileStoneId }: MileStoneProps) => {
   }
 
 
+
+  const withDrawMilestone = async () => {
+
+    try {
+
+      if (!isFounderRole) {
+        console.error("You do not have permission to approve this milestone.");
+        return;
+      }
+
+      const response = await writeContractAsync({
+        address: contractAddress,
+        abi: Raise3Abi,
+        functionName: 'withdrawMilestone',
+        args: [projectId, mileStoneId]
+      })
+
+    } catch (error) {
+      console.log("Error approving milestone:", error);
+    }
+  }
+
+  // const completeMileStone = async () => {
+
+  //   try {
+
+  //     if (!isFounderRole) {
+  //       console.error("You do not have permission to approve this milestone.");
+  //       return;
+  //     }
+
+  //     const response = await writeContractAsync({
+  //       address: contractAddress,
+  //       abi: Raise3Abi,
+  //       functionName: 'completeMilestone',
+  //       args: [projectId, mileStoneId]
+  //     })
+
+  //   } catch (error) {
+  //     console.log("Error approving milestone:", error);
+  //   }
+  // }
+
+
+
   console.log("mileStone", mileStone);
-  const { mileStoneDetails } = useReadMileStones(mileStone as any[]);
+  const { mileStoneDetails, mileStone: singleMileStone } = useReadMileStones(mileStone as any[]);
   console.log("mileStoneDetails", mileStoneDetails);
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -111,6 +158,11 @@ const MilestoneAccordion = ({ projectId, mileStoneId }: MileStoneProps) => {
                   Due: {formatDate(mileStoneDetails?.targetDate)}
                 </span>
               )}
+
+              <span className="text-xs text-gray-400 flex items-center">
+                <FontAwesomeIcon icon={faCheck} className="mr-2" />
+                Prove: {singleMileStone?.prove ? singleMileStone?.prove : 'Not submitted yet'}
+              </span>
             </div>
           </div>
         </div>
@@ -164,9 +216,31 @@ const MilestoneAccordion = ({ projectId, mileStoneId }: MileStoneProps) => {
               </button>
             )}
 
-            {/* <button className="px-4 py-2 bg-red-900/30 border border-red-800/50 text-red-400 rounded-lg hover:bg-red-800/50 transition-all">
-              Reject
-            </button> */}
+            {
+              Boolean(isManagerRole) && (
+                <button className="px-4 py-2 bg-red-900/30 border border-red-800/50 text-red-400 rounded-lg hover:bg-red-800/50 transition-all">
+                  Reject
+                </button>
+              )
+            }
+
+
+            {
+              address == project?.founder && (
+                <>
+                  <button className="px-4 py-2 bg-purple-900/30 border border-purple-800/50 text-purple-400 rounded-lg hover:bg-purple-800/50 transition-all" onClick={withDrawMilestone}>
+                    <FontAwesomeIcon icon={faMoneyBill} className="mr-2" />
+                    Complete
+                  </button>
+                  <button className="px-4 py-2 bg-purple-900/30 border border-purple-800/50 text-purple-400 rounded-lg hover:bg-purple-800/50 transition-all" onClick={withDrawMilestone}>
+                    <FontAwesomeIcon icon={faMoneyBill} className="mr-2" />
+                    Withdraw
+                  </button>
+                </>
+
+              )
+            }
+
           </div>
         </div>
       )}
