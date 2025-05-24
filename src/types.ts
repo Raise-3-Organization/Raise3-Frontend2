@@ -48,3 +48,21 @@ export interface ProjectInterface {
 export interface ProjectId {
     id: number;
 }
+
+export interface Milestone {
+    mileStoneURL: string;
+    prove: string;
+    isApproved: boolean;
+    amount: number;
+    completed: boolean;
+}
+
+export interface MileStoneDetails {
+    title: string;
+    description: string;
+    targetDate: string;
+    status: 'pending' | 'in-progress' | 'completed';
+    deliverables: string[];
+    budget?: string;
+    budgetCurrency?: string;
+}

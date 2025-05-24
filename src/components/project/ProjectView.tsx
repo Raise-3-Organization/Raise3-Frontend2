@@ -9,9 +9,7 @@ import {
   faLightbulb, 
   faStar,
   faHeart, 
-  faArrowRight, 
   faGlobe, 
-  faDollarSign, 
   faCircleInfo, 
   faEnvelope, 
   faUsers, 
@@ -33,6 +31,7 @@ import {
 import { useParams } from 'next/navigation';
 import { useReadProjects } from '@/hooks/useReadProjects';
 import { useProjectDetails } from '@/hooks/useProjectDetails';
+import AllMileStone from '../milestone/AllMileStone';
 
 interface Milestone {
   id: string;
@@ -45,63 +44,11 @@ interface Milestone {
   budgetCurrency?: string;
 }
 
-interface ProjectData {
-  // General Info
-  projectName: string;
-  description: string;
-  problem: string;
-  solution: string;
-  mission: string;
-  location: string;
-  
-  // Social Media
-  socialMedia: {
-    twitter: string;
-    github: string;
-    discord: string;
-    website: string;
-    linkedin: string;
-  };
-  
-  // Project Stage
-  projectStage: {
-    path: string;
-    businessModel: string;
-    stage: string;
-    raisedAmount: string;
-    raisedCurrency: string;
-  };
-  
-  // Contact Info
-  contactInfo: {
-    fullName: string;
-    email: string;
-    telegram: string;
-    network: string;
-  };
 
-  // Team
-  team: {
-    members: Array<{
-      name: string;
-      role: string;
-    }>;
-  };
 
-  // Milestones
-  milestones?: Milestone[];
 
-  // Optional fields 
-  createdAt?: string;
-  updatedAt?: string;
-  imageUrl?: string;
-}
 
-interface ProjectViewProps {
-  project?: ProjectData;
-}
-
-const ProjectView = (props: ProjectViewProps) => {
+const ProjectView = () => {
   // If project is passed directly as a prop, use it
   // Otherwise, fetch it using hooks
   const params = useParams();
@@ -110,7 +57,7 @@ const ProjectView = (props: ProjectViewProps) => {
   const { project: fetchedProject, projectDetails } = useProjectDetails(projects as any[]);
   
   // Use either the prop-passed project or the fetched one
-  const project = props.project || fetchedProject;
+  
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -310,7 +257,7 @@ const ProjectView = (props: ProjectViewProps) => {
               </div>
             )}
             
-            {project?.totalRaised && (
+            {/* {project?.totalRaised && (
               <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-800">
                 <h3 className="text-xs font-medium text-gray-400 mb-1">Funding Goal</h3>
                 <p className="text-white font-medium flex items-center">
@@ -318,7 +265,7 @@ const ProjectView = (props: ProjectViewProps) => {
                   {project?.totalRaised} {projectDetails?.raisedCurrency}
                 </p>
               </div>
-            )}
+            )} */}
           </div>
         </section>
 
@@ -396,7 +343,7 @@ const ProjectView = (props: ProjectViewProps) => {
             Project Milestones
           </h2>
           
-          {project.milestones && project.milestones.length > 0 ? (
+          {/* {project.milestones && project.milestones.length > 0 ? (
             <div className="space-y-4">
               {project.milestones.map((milestone, index) => (
                 <MilestoneAccordion key={milestone.id || index} milestone={milestone} index={index} />
@@ -406,7 +353,7 @@ const ProjectView = (props: ProjectViewProps) => {
             <div className="bg-gray-900/50 p-4 rounded-lg border border-gray-800 text-gray-400 text-center">
               No milestones have been added to this project yet.
             </div>
-          )}
+          )} */}
         </section>
         
         {/* Footer with dates */}
@@ -428,6 +375,7 @@ const ProjectView = (props: ProjectViewProps) => {
           </div>
         )} */}
       </div>
+          <AllMileStone projectId={id} mileStoneCount={fetchedProject?.milestoneCount?.toString() || "0"}/>
     </div>
   );
 };

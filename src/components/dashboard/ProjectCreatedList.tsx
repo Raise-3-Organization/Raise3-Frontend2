@@ -7,7 +7,7 @@ import ProjectCard from "./ProjectCard";
 
 
 const ProjectCreatedList = () => {
-    const { address } = useAccount();
+    // const { address } = useAccount();
     const [projectLen, setProjectLen] = useState<Map<string, string>>(new Map());
     const { data: projectlength, isLoading: isProjectLenLoading, error: projectLenError } = useReadContract({
       address: contractAddress,
