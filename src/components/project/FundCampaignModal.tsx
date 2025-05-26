@@ -11,17 +11,19 @@ import {
   faCheckCircle,
   faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
+import { useRoles } from '@/hooks/useRoles';
+import { useWriteContract, useAccount } from 'wagmi';
+import Raise3Abi from "@/abis/Raise3MileStone.json";
+import { contractAddress } from '@/contants';
 
 interface FundCampaignModalProps {
   onClose: () => void;
-  onSubmit?: (data: { amount: string; currency: string }) => void;
   projectName: string;
   projectId: string;
 }
 
 const FundCampaignModal: React.FC<FundCampaignModalProps> = ({ 
   onClose, 
-  onSubmit,
   projectName,
   projectId
 }) => {
@@ -30,6 +32,11 @@ const FundCampaignModal: React.FC<FundCampaignModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const { address } = useAccount();
+  const { isInvestorRole } = useRoles(address as `0x${string}`);
+
+  const { writeContractAsync } = useWriteContract()
+
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Only allow numbers and decimal point
@@ -63,13 +70,14 @@ const FundCampaignModal: React.FC<FundCampaignModalProps> = ({
       setIsSubmitting(true);
       
       // Simulate API call to process funding
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Call onSubmit if provided
-      if (onSubmit) {
-        onSubmit({ amount, currency });
-      }
-      
+     if(isInvestorRole){
+      await writeContractAsync({
+        abi: Raise3Abi,
+        address: contractAddress,
+        functionName: 'fundProject',
+        args: [projectId, amount]
+      })
+    }
       // Show success message
       setShowSuccessMessage(true);
       
@@ -79,7 +87,7 @@ const FundCampaignModal: React.FC<FundCampaignModalProps> = ({
       }, 2000);
     } catch (err) {
       console.error('Error funding campaign:', err);
-      setError('Failed to process your funding. Please try again.');
+      setError('Failed to process your funding. Please try again or get role');
     } finally {
       setIsSubmitting(false);
     }
@@ -148,6 +156,7 @@ const FundCampaignModal: React.FC<FundCampaignModalProps> = ({
                       onChange={(e) => setCurrency(e.target.value)}
                       className="px-4 py-3 bg-[#0A0A0A] border border-gray-800 border-l-0 rounded-r-lg text-white focus:ring-2 focus:ring-[#FF7171]/50 transition-all duration-200 min-w-[80px]"
                     >
+                      {/* TODO: Add currencies token address */}
                       <option value="USD">USD</option>
                       <option value="EUR">EUR</option>
                       <option value="ETH">ETH</option>

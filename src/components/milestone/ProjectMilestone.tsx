@@ -228,9 +228,9 @@ const MilestoneAccordion = ({ projectId, mileStoneId }: MileStoneProps) => {
             {
               address == project?.founder && (
                 <>
-                  <button className="px-4 py-2 bg-purple-900/30 border border-purple-800/50 text-purple-400 rounded-lg hover:bg-purple-800/50 transition-all" onClick={withDrawMilestone}>
-                    <FontAwesomeIcon icon={faMoneyBill} className="mr-2" />
-                    Complete
+                  <button className="px-4 py-2 bg-purple-900/30 border border-purple-800/50 text-purple-400 rounded-lg hover:bg-purple-800/50 transition-all">
+                  <FontAwesomeIcon icon={faCheck} className="mr-2" />
+                  Complete
                   </button>
                   <button className="px-4 py-2 bg-purple-900/30 border border-purple-800/50 text-purple-400 rounded-lg hover:bg-purple-800/50 transition-all" onClick={withDrawMilestone}>
                     <FontAwesomeIcon icon={faMoneyBill} className="mr-2" />
